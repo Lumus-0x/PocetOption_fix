@@ -77,7 +77,7 @@ class SheetsAuthManagerImpl @Inject constructor(
      * Get existing signed-in account or null if interactive sign-in is required
      * Does NOT throw - returns Result for caller to handle
      */
-    suspend fun getAccountOrNull(): Result<GoogleSignInAccount> = withContext(Dispatchers.IO) {
+    override suspend fun getAccountOrNull(): Result<GoogleSignInAccount> = withContext(Dispatchers.IO) {
         // Try to get already signed-in account
         var account = GoogleSignIn.getLastSignedInAccount(context)
 

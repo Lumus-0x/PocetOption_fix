@@ -190,7 +190,7 @@ class SheetsRepository(
         try {
             val service = authManager.getSheetsService()
             if (service == null) {
-                return Result.failure(SheetsAuthException("Not signed in. Interactive sign-in required."))
+                return@withContext Result.failure(SheetsAuthException("Not signed in. Interactive sign-in required."))
             }
             service.spreadsheets().get(SPREADSHEET_ID).execute()
             Result.success(Unit)
