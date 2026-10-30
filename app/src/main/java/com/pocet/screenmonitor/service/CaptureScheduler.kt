@@ -179,7 +179,10 @@ class CaptureScheduler(private val context: Context) {
 }
 
 /**
- * Worker for periodic screen capture
+ * Worker for periodic screen capture.
+ * Note: This worker cannot start screen capture directly because it requires
+ * MediaProjection permission which must be granted by user via Activity.
+ * Instead, it checks if the service should be running and notifies if not.
  */
 class CaptureWorker(
     context: Context,
@@ -191,22 +194,21 @@ class CaptureWorker(
     }
 
     override fun doWork(): Result {
-        Timber.d("CaptureWorker: Starting capture")
+        Timber.d("CaptureWorker: Checking capture status")
 
         try {
-            // Check if we have MediaProjection permission
-            // This would typically be handled by starting the foreground service
-            // For now, we'll just trigger the service if it's not running
+            // Check if service is supposed to be running
+            val prefs = applicationContext.getSharedPreferences("capture_scheduler_prefs", Context.MODE_PRIVATE)
+            val isServiceRunning = prefs.getBoolean(CaptureScheduler.PREF_KEY_SERVICE_RUNNING, false)
 
-            val intent = Intent(applicationContext, ScreenCaptureService::class.java).apply {
-                action = ScreenCaptureService.ACTION_START_CAPTURE
-                // MediaProjection data would need to be passed here
-                // In practice, this needs to be started from an Activity with the projection data
+            if (isServiceRunning) {
+                // Service should be running but might have been killed
+                // We can't restart it without MediaProjection user consent
+                // Just log and return success - the app will handle restart when user opens it
+                Timber.d("CaptureWorker: Service should be running, but cannot auto-restart without user consent")
+            } else {
+                Timber.d("CaptureWorker: Service not scheduled to run")
             }
-
-            // Start the foreground service
-            // Note: This requires the MediaProjection data from user consent
-            // The actual capture is managed by the service itself once started
 
             return Result.success()
         } catch (e: Exception) {

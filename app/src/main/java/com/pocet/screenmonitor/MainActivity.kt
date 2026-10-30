@@ -26,9 +26,11 @@ import com.pocet.screenmonitor.service.CaptureScheduler
 import com.pocet.screenmonitor.service.ScreenCaptureService
 import com.pocet.screenmonitor.service.SheetsAuthManager
 import com.pocet.screenmonitor.service.SheetsRepository
+import com.pocet.screenmonitor.di.ServiceEntryPoint
 import com.pocet.screenmonitor.util.BatteryOptimizationUtils
 import com.pocet.screenmonitor.util.PermissionUtils
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -203,6 +205,11 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !batteryUtils.hasNotificationPermission()) {
             notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
+
+        // Check exact alarm permission result
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            exactAlarmLauncher.launch(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+        }
     }
 
     private fun checkBatteryOptimization() {
@@ -362,14 +369,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun getSheetsRepository(): SheetsRepository? {
         try {
-            val app = applicationContext as? PocetApplication
-            return app?.let { hiltApp ->
-                // Use Hilt to get repository
-                // hiltApp.hiltComponent.sheetsRepository()
-                null // Placeholder - will be implemented with Hilt
-            }
+            val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ServiceEntryPoint::class.java)
+            return entryPoint.sheetsRepository().get()
         } catch (e: Exception) {
-            Timber.e(e, "Failed to get SheetsRepository")
+            Timber.e(e, "Failed to get SheetsRepository from Hilt EntryPoint")
             return null
         }
     }

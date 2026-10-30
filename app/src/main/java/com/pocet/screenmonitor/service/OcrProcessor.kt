@@ -24,7 +24,15 @@ import timber.log.Timber
 
 class OcrProcessor {
 
-    private val textRecognizer: TextRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val textRecognizer: TextRecognizer by lazy {
+        try {
+            TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to initialize TextRecognizer, OCR will not work")
+            // Return a dummy recognizer that always fails gracefully
+            throw RuntimeException("TextRecognizer initialization failed", e)
+        }
+    }
     private val processingJob = SupervisorJob()
     private val processingScope = CoroutineScope(processingJob + Dispatchers.IO)
     private var isProcessing = false
@@ -36,6 +44,14 @@ class OcrProcessor {
     suspend fun processImage(image: Image, targetAccountType: BalanceResult.AccountType? = null): BalanceResult = withContext(Dispatchers.IO) {
         if (isProcessing) {
             return@withContext BalanceResult.unknown("Already processing")
+        }
+
+        // Check if textRecognizer is initialized
+        val recognizer = try {
+            textRecognizer
+        } catch (e: Exception) {
+            Timber.e(e, "TextRecognizer not available")
+            return@withContext BalanceResult.unknown("OCR not initialized")
         }
 
         isProcessing = true
@@ -58,7 +74,7 @@ class OcrProcessor {
             }
 
             // Run text recognition
-            val task = textRecognizer.process(inputImage)
+            val task = recognizer.process(inputImage)
             val mlKitText = Tasks.await(task)
 
             // Process with TextParser

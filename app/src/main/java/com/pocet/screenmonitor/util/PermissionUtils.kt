@@ -11,14 +11,16 @@ object PermissionUtils {
 
     // MediaProjection is handled via system intent, not runtime permission
     // These are the runtime permissions we need to request
+    // Note: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is NOT a regular runtime permission,
+    // it requires a special intent (Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
 
     const val REQUEST_CODE_PERMISSIONS = 2000
 
     val REQUIRED_PERMISSIONS = arrayOf(
         android.Manifest.permission.INTERNET,
         android.Manifest.permission.ACCESS_NETWORK_STATE,
-        android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
-        android.Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+        android.Manifest.permission.RECEIVE_BOOT_COMPLETED
+        // REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is handled separately via BatteryOptimizationUtils
     )
 
     // Android 13+ notification permission

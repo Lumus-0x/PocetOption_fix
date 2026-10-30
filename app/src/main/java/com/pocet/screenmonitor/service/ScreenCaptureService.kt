@@ -25,7 +25,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.pocet.screenmonitor.MainActivity
 import com.pocet.screenmonitor.R
+import com.pocet.screenmonitor.di.ServiceEntryPoint
 import com.pocet.screenmonitor.model.BalanceResult
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -86,22 +88,19 @@ class ScreenCaptureService : Service() {
     }
 
     private fun initSheetsRepository() {
-        // SheetsRepository will be initialized when needed via Hilt or manual creation
-        // For now, we'll create it lazily when we have the auth manager
+        // Get SheetsRepository from Hilt EntryPoint
+        try {
+            val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ServiceEntryPoint::class.java)
+            sheetsRepository = entryPoint.sheetsRepository().get()
+            Timber.d("SheetsRepository initialized from Hilt EntryPoint")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to get SheetsRepository from Hilt EntryPoint")
+        }
     }
 
     private fun getSheetsRepository(): SheetsRepository? {
         if (sheetsRepository == null) {
-            try {
-                // Get from Hilt if available, otherwise create manually
-                val app = applicationContext as? com.pocet.screenmonitor.PocetApplication
-                app?.let { hiltApp ->
-                    // Use Hilt to get dependencies
-                    // sheetsRepository = hiltApp.hiltComponent.sheetsRepository()
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to get SheetsRepository from Hilt")
-            }
+            initSheetsRepository()
         }
         return sheetsRepository
     }

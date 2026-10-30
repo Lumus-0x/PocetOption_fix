@@ -20,11 +20,11 @@ class EncryptedPrefsUtil(private val context: Context) {
         val masterKeyAlias = try {
             MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
         } catch (e: GeneralSecurityException) {
-            Timber.e(e, "Failed to create master key")
-            throw RuntimeException("Failed to create master key", e)
+            Timber.e(e, "Failed to create master key, falling back to regular SharedPreferences")
+            return createFallbackPrefs()
         } catch (e: IOException) {
-            Timber.e(e, "IO Exception creating master key")
-            throw RuntimeException("IO Exception creating master key", e)
+            Timber.e(e, "IO Exception creating master key, falling back to regular SharedPreferences")
+            return createFallbackPrefs()
         }
 
         return try {
@@ -36,12 +36,17 @@ class EncryptedPrefsUtil(private val context: Context) {
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: GeneralSecurityException) {
-            Timber.e(e, "Failed to create encrypted shared preferences")
-            throw RuntimeException("Failed to create encrypted shared preferences", e)
+            Timber.e(e, "Failed to create encrypted shared preferences, falling back to regular SharedPreferences")
+            createFallbackPrefs()
         } catch (e: IOException) {
-            Timber.e(e, "IO Exception creating encrypted shared preferences")
-            throw RuntimeException("IO Exception creating encrypted shared preferences", e)
+            Timber.e(e, "IO Exception creating encrypted shared preferences, falling back to regular SharedPreferences")
+            createFallbackPrefs()
         }
+    }
+
+    private fun createFallbackPrefs(): SharedPreferences {
+        Timber.w("Using fallback regular SharedPreferences (not encrypted)")
+        return context.getSharedPreferences("secure_prefs_fallback", Context.MODE_PRIVATE)
     }
 
     fun putString(key: String, value: String) {
