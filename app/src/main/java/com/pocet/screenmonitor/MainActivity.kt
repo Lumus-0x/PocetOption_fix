@@ -281,16 +281,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleSignInResult(resultCode: Int, data: Intent?) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val account = authManager.handleSignInResult(resultCode, data)
+            val result = authManager.handleSignInResult(resultCode, data)
             runOnUiThread {
-                if (account != null) {
-                    btnSignIn.text = getString(R.string.btn_signed_in)
-                    btnSignIn.isEnabled = false
-                    updateStatus(getString(R.string.status_signed_in, account.email))
-                    Toast.makeText(this@MainActivity, getString(R.string.toast_signed_in_success), Toast.LENGTH_SHORT).show()
+                if (result.isSuccess) {
+                    val account = result.getOrNull()
+                    if (account != null) {
+                        btnSignIn.text = getString(R.string.btn_signed_in)
+                        btnSignIn.isEnabled = false
+                        updateStatus(getString(R.string.status_signed_in, account.email))
+                        Toast.makeText(this@MainActivity, getString(R.string.toast_signed_in_success), Toast.LENGTH_SHORT).show()
+                    }
                 } else {
+                    val errorMsg = result.exceptionOrNull()?.message ?: getString(R.string.toast_sign_in_failed)
                     updateStatus(getString(R.string.status_sign_in_failed))
-                    Toast.makeText(this@MainActivity, getString(R.string.toast_sign_in_failed), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, errorMsg, Toast.LENGTH_LONG).show()
                 }
             }
         }

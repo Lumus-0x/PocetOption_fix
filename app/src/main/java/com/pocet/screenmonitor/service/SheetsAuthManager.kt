@@ -13,7 +13,7 @@ interface SheetsAuthManager {
 
     fun getSignInIntent(): Intent?
 
-    suspend fun handleSignInResult(resultCode: Int, intent: Intent?): GoogleSignInAccount?
+    suspend fun handleSignInResult(resultCode: Int, intent: Intent?): Result<GoogleSignInAccount>
 
     fun signOut()
 

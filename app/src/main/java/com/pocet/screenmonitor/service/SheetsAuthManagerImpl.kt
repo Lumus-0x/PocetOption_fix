@@ -117,12 +117,20 @@ class SheetsAuthManagerImpl @Inject constructor(
      * Handle sign-in result from Activity
      * @param resultCode The result code from the activity (Activity.RESULT_OK, Activity.RESULT_CANCELED, etc.)
      * @param intent The intent data from the sign-in activity
+     * @return Result containing the signed-in account or error details
      */
-    override suspend fun handleSignInResult(resultCode: Int, intent: android.content.Intent?): GoogleSignInAccount? = withContext(Dispatchers.IO) {
+    override suspend fun handleSignInResult(resultCode: Int, intent: android.content.Intent?): Result<GoogleSignInAccount> = withContext(Dispatchers.IO) {
         // Check if user cancelled or there was an error
-        if (resultCode != Activity.RESULT_OK || intent == null) {
-            Timber.d("Sign-in cancelled or failed with resultCode: $resultCode")
-            return@withContext null
+        if (resultCode != Activity.RESULT_OK) {
+            val msg = when (resultCode) {
+                Activity.RESULT_CANCELED -> "User cancelled sign-in"
+                else -> "Sign-in failed with result code: $resultCode"
+            }
+            Timber.d(msg)
+            return@withContext Result.failure(Exception(msg))
+        }
+        if (intent == null) {
+            return@withContext Result.failure(Exception("No sign-in intent data received"))
         }
 
         return@withContext try {
@@ -136,13 +144,15 @@ class SheetsAuthManagerImpl @Inject constructor(
             }
 
             Timber.d("Sign-in successful for account: $accountName")
-            account
+            Result.success(account)
         } catch (e: ApiException) {
-            Timber.e(e, "Sign-in failed: ${e.statusCode} - ${e.message}")
-            null
+            val errorMsg = "Google Sign-In failed (${e.statusCode}): ${e.message ?: "Unknown error"}"
+            Timber.e(e, errorMsg)
+            Result.failure(Exception(errorMsg))
         } catch (e: Exception) {
-            Timber.e(e, "Unexpected error during sign-in")
-            null
+            val errorMsg = "Unexpected error during sign-in: ${e.message ?: e.class.simpleName}"
+            Timber.e(e, errorMsg)
+            Result.failure(Exception(errorMsg))
         }
     }
 

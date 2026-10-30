@@ -142,60 +142,77 @@ class ScreenCaptureService : Service() {
         Timber.d("Starting screen capture")
         mediaProjection = projection
 
-        setupImageReader()
-        createVirtualDisplay()
+        try {
+            setupImageReader()
+            createVirtualDisplay()
 
-        isCapturing = true
-        showForegroundNotification()
-        startCaptureLoop()
+            isCapturing = true
+            showForegroundNotification()
+            startCaptureLoop()
 
-        // Register MediaProjection callback
-        mediaProjection?.registerCallback(object : MediaProjection.Callback() {
-            override fun onStop() {
-                Timber.d("MediaProjection stopped by system")
-                mainScope.launch {
-                    stopCapture()
-                    stopSelf()
+            // Register MediaProjection callback
+            mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    Timber.d("MediaProjection stopped by system")
+                    mainScope.launch {
+                        stopCapture()
+                        stopSelf()
+                    }
                 }
-            }
-        }, Handler(Looper.getMainLooper()))
+            }, Handler(Looper.getMainLooper()))
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to start screen capture")
+            stopCapture()
+            stopSelf()
+        }
     }
 
     private fun setupImageReader() {
         val width = displayMetrics?.widthPixels ?: 1080
         val height = displayMetrics?.heightPixels ?: 1920
 
-        imageReader = ImageReader.newInstance(
-            width, height,
-            PixelFormat.RGBA_8888,
-            2 // Max images
-        ).apply {
-            setOnImageAvailableListener({ reader ->
-                if (isCapturing) {
-                    captureScope.launch {
-                        processFrame(reader)
+        try {
+            imageReader = ImageReader.newInstance(
+                width, height,
+                PixelFormat.RGBA_8888,
+                2 // Max images
+            ).apply {
+                setOnImageAvailableListener({ reader ->
+                    if (isCapturing) {
+                        captureScope.launch {
+                            processFrame(reader)
+                        }
                     }
-                }
-            }, Handler(Looper.getMainLooper()))
+                }, Handler(Looper.getMainLooper()))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create ImageReader")
+            throw e
         }
     }
 
     private fun createVirtualDisplay() {
+        val projection = mediaProjection ?: return
         val width = displayMetrics?.widthPixels ?: 1080
         val height = displayMetrics?.heightPixels ?: 1920
         val density = displayMetrics?.densityDpi ?: 320
 
-        virtualDisplay = mediaProjection?.createVirtualDisplay(
-            "ScreenCaptureDisplay",
-            width, height, density,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            imageReader?.surface,
-            null, // Callback
-            null  // Handler
-        )
+        try {
+            virtualDisplay = projection.createVirtualDisplay(
+                "ScreenCaptureDisplay",
+                width, height, density,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                imageReader?.surface,
+                null, // Callback
+                null  // Handler
+            )
 
-        if (virtualDisplay == null) {
-            Timber.e("Failed to create virtual display")
+            if (virtualDisplay == null) {
+                Timber.e("Failed to create virtual display - returned null")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Exception creating virtual display")
+            throw e
         }
     }
 
