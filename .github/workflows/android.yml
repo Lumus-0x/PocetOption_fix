@@ -27,6 +27,7 @@ jobs:
         api-level: 35
         ndk-version: r26c
         build-tools-version: 35.0.0
+        accept-android-sdk-licenses: true
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -60,6 +61,7 @@ jobs:
       uses: android-actions/setup-android@v3
       with:
         api-level: 35
+        accept-android-sdk-licenses: true
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
