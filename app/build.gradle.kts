@@ -66,7 +66,7 @@ dependencies {
     kapt("com.google.dagger:hilt-compiler:2.51")
 
     // ML Kit Text Recognition (on-device)
-    implementation("com.google.mlkit:text-recognition:19.0.0")
+    implementation("com.google.mlkit:text-recognition:16.0.0")
 
     // Google Auth & Sheets API
     implementation("com.google.android.gms:play-services-auth:21.0.0")
