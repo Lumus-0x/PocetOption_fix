@@ -115,6 +115,10 @@ class ScreenCaptureService : Service() {
                 val resultData = intent.getParcelableExtra<Intent>(EXTRA_RESULT_DATA)
 
                 if (resultCode == android.app.Activity.RESULT_OK && resultData != null) {
+                    // Start foreground service FIRST with correct type (required on Android 14+)
+                    // Then create MediaProjection
+                    startForegroundServiceWithType()
+
                     val mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
                     val projection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
                     if (projection != null) {
@@ -137,6 +141,35 @@ class ScreenCaptureService : Service() {
         return START_STICKY
     }
 
+    /**
+     * Start foreground service with MEDIA_PROJECTION type (required on Android 14+)
+     * Must be called BEFORE creating MediaProjection
+     */
+    private fun startForegroundServiceWithType() {
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.notification_title))
+            .setContentText(getString(R.string.notification_text))
+            .setSmallIcon(R.drawable.ic_notification)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10+ (API 29): use startForeground with foregroundServiceType
+            // FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION = 8 (added in API 34)
+            val mediaProjectionType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            } else {
+                // For Android 10-13, use the constant value directly
+                8 // FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            }
+            startForeground(NOTIFICATION_ID, notification, mediaProjectionType)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+    }
+
     private fun startCapture(projection: MediaProjection) {
         Timber.d("Starting screen capture")
         mediaProjection = projection
@@ -146,7 +179,7 @@ class ScreenCaptureService : Service() {
             createVirtualDisplay()
 
             isCapturing = true
-            showForegroundNotification()
+            // Foreground already started in onStartCommand, just update notification if needed
             startCaptureLoop()
 
             // Register MediaProjection callback
