@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Material 3 Dark Theme Colors (referenced from themes.xml) -->
+    <!-- Material 3 Dark Theme Colors (used as design tokens) -->
     <color name="md_theme_light_primary">#A6C8EE</color>
     <color name="md_theme_light_onPrimary">#00335E</color>
     <color name="md_theme_light_primaryContainer">#00498A</color>
@@ -39,6 +39,22 @@
     <color name="md_theme_light_shadow">#000000</color>
     <color name="md_theme_light_scrim">#000000</color>
     <color name="md_theme_light_surfaceTint">#A6C8EE</color>
+
+    <!-- Material 2 theme attributes (referenced in themes.xml) -->
+    <color name="colorPrimary">#A6C8EE</color>
+    <color name="colorPrimaryVariant">#00498A</color>
+    <color name="colorOnPrimary">#00335E</color>
+    <color name="colorSecondary">#BAC8E0</color>
+    <color name="colorSecondaryVariant">#354D63</color>
+    <color name="colorOnSecondary">#1F354A</color>
+    <color name="colorTertiary">#CCC2E0</color>
+    <color name="colorOnTertiary">#332B48</color>
+    <color name="colorError">#F2B8B5</color>
+    <color name="colorOnError">#601410</color>
+    <color name="colorSurface">#1D1D1F</color>
+    <color name="colorOnSurface">#E8E6EA</color>
+    <color name="colorBackground">#1D1D1F</color>
+    <color name="colorOnBackground">#E8E6EA</color>
 
     <!-- Legacy color names for backward compatibility -->
     <color name="primary">#A6C8EE</color>

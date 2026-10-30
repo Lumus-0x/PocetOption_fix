@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Material 3 Light Theme Colors -->
+    <!-- Material 3 Light Theme Colors (used as design tokens) -->
     <color name="md_theme_light_primary">#1976D2</color>
     <color name="md_theme_light_onPrimary">#FFFFFF</color>
     <color name="md_theme_light_primaryContainer">#D6E4F0</color>
@@ -40,45 +40,21 @@
     <color name="md_theme_light_scrim">#000000</color>
     <color name="md_theme_light_surfaceTint">#1976D2</color>
 
-    <!-- Material 3 Dark Theme Colors -->
-    <color name="md_theme_dark_primary">#A6C8EE</color>
-    <color name="md_theme_dark_onPrimary">#00335E</color>
-    <color name="md_theme_dark_primaryContainer">#00498A</color>
-    <color name="md_theme_dark_onPrimaryContainer">#D6E4F0</color>
-
-    <color name="md_theme_dark_secondary">#BAC8E0</color>
-    <color name="md_theme_dark_onSecondary">#1F354A</color>
-    <color name="md_theme_dark_secondaryContainer">#354D63</color>
-    <color name="md_theme_dark_onSecondaryContainer">#D6E4F0</color>
-
-    <color name="md_theme_dark_tertiary">#CCC2E0</color>
-    <color name="md_theme_dark_onTertiary">#332B48</color>
-    <color name="md_theme_dark_tertiaryContainer">#4A435E</color>
-    <color name="md_theme_dark_onTertiaryContainer">#E8DEF8</color>
-
-    <color name="md_theme_dark_error">#F2B8B5</color>
-    <color name="md_theme_dark_onError">#601410</color>
-    <color name="md_theme_dark_errorContainer">#8C1D18</color>
-    <color name="md_theme_dark_onErrorContainer">#FCD8D8</color>
-
-    <color name="md_theme_dark_surface">#1D1D1F</color>
-    <color name="md_theme_dark_onSurface">#E8E6EA</color>
-    <color name="md_theme_dark_surfaceVariant">#4A4451</color>
-    <color name="md_theme_dark_onSurfaceVariant">#CAC4D0</color>
-
-    <color name="md_theme_dark_outline">#938F99</color>
-    <color name="md_theme_dark_outlineVariant">#4A4451</color>
-
-    <color name="md_theme_dark_background">#1D1D1F</color>
-    <color name="md_theme_dark_onBackground">#E8E6EA</color>
-
-    <color name="md_theme_dark_inverseSurface">#E8E6EA</color>
-    <color name="md_theme_dark_inverseOnSurface">#343336</color>
-    <color name="md_theme_dark_inversePrimary">#1976D2</color>
-
-    <color name="md_theme_dark_shadow">#000000</color>
-    <color name="md_theme_dark_scrim">#000000</color>
-    <color name="md_theme_dark_surfaceTint">#A6C8EE</color>
+    <!-- Material 2 theme attributes (referenced in themes.xml) -->
+    <color name="colorPrimary">#1976D2</color>
+    <color name="colorPrimaryVariant">#D6E4F0</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorSecondary">#4A637A</color>
+    <color name="colorSecondaryVariant">#D6E4F0</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+    <color name="colorTertiary">#635B7A</color>
+    <color name="colorOnTertiary">#FFFFFF</color>
+    <color name="colorError">#D32F2F</color>
+    <color name="colorOnError">#FFFFFF</color>
+    <color name="colorSurface">#FFFBFE</color>
+    <color name="colorOnSurface">#1D1D1F</color>
+    <color name="colorBackground">#FFFBFE</color>
+    <color name="colorOnBackground">#1D1D1F</color>
 
     <!-- Legacy color names for backward compatibility -->
     <color name="primary">#1976D2</color>
