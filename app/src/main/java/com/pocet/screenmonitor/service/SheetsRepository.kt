@@ -52,7 +52,9 @@ class SheetsRepository(
                 .get(SPREADSHEET_ID, DATE_RANGE)
                 .execute()
 
-            val dateValues: List<List<Any?>>? = dateResponse.values
+            // Google Sheets API returns raw Java List - cast explicitly
+            @Suppress("UNCHECKED_CAST")
+            val dateValues: List<List<Any?>>? = dateResponse.values as? List<List<Any?>>
                 ?: return Result.failure(Exception("No date values found in sheet"))
 
             Timber.d("Found ${dateValues.size} date rows")
@@ -60,9 +62,9 @@ class SheetsRepository(
             // 2. Find row matching today's date
             var targetRowIndex = -1
             for (i in dateValues.indices) {
-                val row = dateValues.get(i)
-                val cellValue = if (row != null && row.isNotEmpty()) row.get(0)?.toString()?.trim() else ""
-                val normalizedDate = dateUtils.normalizeForComparison(cellValue ?: "")
+                val row = dateValues[i]
+                val cellValue = row?.getOrNull(0)?.toString()?.trim() ?: ""
+                val normalizedDate = dateUtils.normalizeForComparison(cellValue)
                 if (normalizedDate == today) {
                     targetRowIndex = i
                     break
@@ -115,50 +117,57 @@ class SheetsRepository(
      */
     suspend fun readBalanceForDate(): Result<Double?> = withContext(Dispatchers.IO) {
         retryWithBackoff(maxRetries = MAX_RETRIES) {
-            try {
-                val service = authManager.getSheetsService()
-                val today = dateUtils.getCurrentDateForSheets()
+            readBalanceInternal()
+        }
+    }
 
-                val dateResponse = service.spreadsheets().values()
-                    .get(SPREADSHEET_ID, DATE_RANGE)
-                    .execute()
+    private suspend fun readBalanceInternal(): Result<Double?> {
+        try {
+            val service = authManager.getSheetsService()
+            val today = dateUtils.getCurrentDateForSheets()
 
-                val dateValues: List<List<Any?>>? = dateResponse.values ?: return@retryWithBackoff Result.success(null)
+            val dateResponse = service.spreadsheets().values()
+                .get(SPREADSHEET_ID, DATE_RANGE)
+                .execute()
 
-                var targetRowIndex = -1
-                for (i in dateValues.indices) {
-                    val row = dateValues.get(i)
-                    val cellValue = if (row != null && row.isNotEmpty()) row.get(0)?.toString()?.trim() else ""
-                    val normalizedDate = dateUtils.normalizeForComparison(cellValue ?: "")
-                    if (normalizedDate == today) {
-                        targetRowIndex = i
-                        break
-                    }
+            @Suppress("UNCHECKED_CAST")
+            val dateValues: List<List<Any?>>? = dateResponse.values as? List<List<Any?>>
+                ?: return Result.success(null)
+
+            var targetRowIndex = -1
+            for (i in dateValues.indices) {
+                val row = dateValues[i]
+                val cellValue = row?.getOrNull(0)?.toString()?.trim() ?: ""
+                val normalizedDate = dateUtils.normalizeForComparison(cellValue)
+                if (normalizedDate == today) {
+                    targetRowIndex = i
+                    break
                 }
-
-                if (targetRowIndex == -1) {
-                    return@retryWithBackoff Result.success(null)
-                }
-
-                val targetRow = targetRowIndex + 6
-                val readRange = "$AMOUNT_COLUMN$targetRow"
-
-                val amountResponse = service.spreadsheets().values()
-                    .get(SPREADSHEET_ID, readRange)
-                    .execute()
-
-                val amountValues: List<List<Any?>>? = amountResponse.values
-                if (amountValues != null && amountValues.isNotEmpty()) {
-                    val firstRow = amountValues.get(0)
-                    val value = if (firstRow != null && firstRow.isNotEmpty()) firstRow.get(0)?.toString() else null
-                    return@retryWithBackoff Result.success(value?.toDoubleOrNull())
-                }
-
-                return@retryWithBackoff Result.success(null)
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to read balance")
-                return@retryWithBackoff Result.failure(e)
             }
+
+            if (targetRowIndex == -1) {
+                return Result.success(null)
+            }
+
+            val targetRow = targetRowIndex + 6
+            val readRange = "$AMOUNT_COLUMN$targetRow"
+
+            val amountResponse = service.spreadsheets().values()
+                .get(SPREADSHEET_ID, readRange)
+                .execute()
+
+            @Suppress("UNCHECKED_CAST")
+            val amountValues: List<List<Any?>>? = amountResponse.values as? List<List<Any?>>
+            if (amountValues != null && amountValues.isNotEmpty()) {
+                val firstRow = amountValues[0]
+                val value = firstRow?.getOrNull(0)?.toString()
+                return Result.success(value?.toDoubleOrNull())
+            }
+
+            return Result.success(null)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to read balance")
+            return Result.failure(e)
         }
     }
 
@@ -178,10 +187,11 @@ class SheetsRepository(
 
     /**
      * Retry with exponential backoff and jitter
+     * Note: Must be called from a suspend function or coroutine context
      */
-    private inline fun <T> retryWithBackoff(
+    private suspend fun <T> retryWithBackoff(
         maxRetries: Int,
-        crossinline action: suspend () -> Result<T>
+        action: suspend () -> Result<T>
     ): Result<T> {
         var attempt = 0
         var lastException: Throwable? = null
@@ -205,7 +215,7 @@ class SheetsRepository(
                 )
                 // Add jitter
                 val jitter = (Math.random() * 1000).toLong()
-                Thread.sleep(delay + jitter)
+                kotlinx.coroutines.delay(delay + jitter)
                 Timber.d("Retry attempt $attempt after ${delay + jitter}ms")
             }
         }

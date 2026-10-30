@@ -83,63 +83,72 @@ class OcrProcessor {
     }
 
     /**
-     * Convert Android Media Image (YUV_420_888) to Bitmap
+     * Convert Android Media Image to Bitmap
+     * Handles both RGBA_8888 (from ImageReader) and YUV_420_888 formats
      */
     private fun imageToBitmap(image: Image): Bitmap? {
-        // For YUV_420_888 format from MediaProjection
-        if (image.format != ImageFormat.YUV_420_888) {
-            Timber.w("Unexpected image format: ${image.format}")
-        }
-
         val planes = image.planes
-        if (planes.size < 3) {
-            return null
+        val width = image.width
+        val height = image.height
+
+        // Handle RGBA_8888 format (from ImageReader with PixelFormat.RGBA_8888)
+        if (image.format == android.graphics.PixelFormat.RGBA_8888 || planes.size == 1) {
+            val buffer = planes[0].buffer
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            buffer.rewind()
+            bitmap.copyPixelsFromBuffer(buffer)
+            return bitmap
         }
 
-        val yBuffer = planes[0].buffer
-        val uBuffer = planes[1].buffer
-        val vBuffer = planes[2].buffer
+        // Handle YUV_420_888 format
+        if (image.format == ImageFormat.YUV_420_888 && planes.size >= 3) {
+            val yBuffer = planes[0].buffer
+            val uBuffer = planes[1].buffer
+            val vBuffer = planes[2].buffer
 
-        val ySize = yBuffer.remaining()
-        val uSize = uBuffer.remaining()
-        val vSize = vBuffer.remaining()
+            val ySize = yBuffer.remaining()
+            val uSize = uBuffer.remaining()
+            val vSize = vBuffer.remaining()
 
-        val nv21 = ByteArray(ySize + uSize + vSize)
+            val nv21 = ByteArray(ySize + uSize + vSize)
 
-        // Y plane
-        yBuffer.get(nv21, 0, ySize)
+            // Y plane
+            yBuffer.get(nv21, 0, ySize)
 
-        // VU interleaved (NV21 format)
-        val uvStride = planes[1].pixelStride
-        val uvRowStride = planes[1].rowStride
+            // VU interleaved (NV21 format)
+            val uvStride = planes[1].pixelStride
+            val uvRowStride = planes[1].rowStride
 
-        var nv21Index = ySize
-        for (row in 0 until image.height / 2) {
-            val uOffset = row * uvRowStride
-            val vOffset = row * uvRowStride
+            var nv21Index = ySize
+            for (row in 0 until height / 2) {
+                val uOffset = row * uvRowStride
+                val vOffset = row * uvRowStride
 
-            for (col in 0 until image.width / 2) {
-                val uIndex = uOffset + col * uvStride
-                val vIndex = vOffset + col * uvStride
+                for (col in 0 until width / 2) {
+                    val uIndex = uOffset + col * uvStride
+                    val vIndex = vOffset + col * uvStride
 
-                if (uIndex < uBuffer.capacity() && vIndex < vBuffer.capacity()) {
-                    uBuffer.position(uIndex)
-                    vBuffer.position(vIndex)
-                    nv21[nv21Index++] = vBuffer.get() // V first in NV21
-                    nv21[nv21Index++] = uBuffer.get() // U second in NV21
+                    if (uIndex < uBuffer.capacity() && vIndex < vBuffer.capacity()) {
+                        uBuffer.position(uIndex)
+                        vBuffer.position(vIndex)
+                        nv21[nv21Index++] = vBuffer.get() // V first in NV21
+                        nv21[nv21Index++] = uBuffer.get() // U second in NV21
+                    }
                 }
             }
+
+            val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+
+            // Use compressToByteArray with pre-allocated byte array, then decode
+            val rect = Rect(0, 0, width, height)
+            val jpegData = ByteArray(width * height * 2) // Estimate JPEG size
+            val bytesWritten = yuvImage.compressToByteArray(rect, jpegData)
+            return android.graphics.BitmapFactory.decodeByteArray(jpegData, 0, bytesWritten)
         }
 
-        val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
-        val bitmap = Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888)
-
-        // Use compressToByteArray to encode as JPEG, then decode
-        val rect = Rect(0, 0, image.width, image.height)
-        val byteArrayOutputStream = java.io.ByteArrayOutputStream()
-        yuvImage.compressToByteArray(rect, byteArrayOutputStream)
-        val jpegData = byteArrayOutputStream.toByteArray()
-        return android.graphics.BitmapFactory.decodeByteArray(jpegData, 0, jpegData.size)
+        Timber.w("Unsupported image format: ${image.format}, planes: ${planes.size}")
+        return null
     }
 
     /**
