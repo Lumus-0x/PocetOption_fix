@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Collections
+import java.util.List
 
 // Type aliases for exception types (top-level to avoid nested type alias issues)
 typealias SheetsAuthException = SheetsRepository.SheetsException.AuthException
@@ -51,7 +52,7 @@ class SheetsRepository(
                 .get(SPREADSHEET_ID, DATE_RANGE)
                 .execute()
 
-            val dateValues = dateResponse.values
+            val dateValues: List<List<Any?>>? = dateResponse.values
                 ?: return Result.failure(Exception("No date values found in sheet"))
 
             Timber.d("Found ${dateValues.size} date rows")
@@ -59,8 +60,8 @@ class SheetsRepository(
             // 2. Find row matching today's date
             var targetRowIndex = -1
             for (i in dateValues.indices) {
-                val row = dateValues[i]
-                val cellValue = if (row != null && row.size > 0) row[0]?.toString()?.trim() else ""
+                val row = dateValues.get(i)
+                val cellValue = if (row != null && row.isNotEmpty()) row.get(0)?.toString()?.trim() else ""
                 val normalizedDate = dateUtils.normalizeForComparison(cellValue ?: "")
                 if (normalizedDate == today) {
                     targetRowIndex = i
@@ -122,12 +123,12 @@ class SheetsRepository(
                     .get(SPREADSHEET_ID, DATE_RANGE)
                     .execute()
 
-                val dateValues = dateResponse.values ?: return@retryWithBackoff Result.success(null)
+                val dateValues: List<List<Any?>>? = dateResponse.values ?: return@retryWithBackoff Result.success(null)
 
                 var targetRowIndex = -1
                 for (i in dateValues.indices) {
-                    val row = dateValues[i]
-                    val cellValue = if (row != null && row.size > 0) row[0]?.toString()?.trim() else ""
+                    val row = dateValues.get(i)
+                    val cellValue = if (row != null && row.isNotEmpty()) row.get(0)?.toString()?.trim() else ""
                     val normalizedDate = dateUtils.normalizeForComparison(cellValue ?: "")
                     if (normalizedDate == today) {
                         targetRowIndex = i
@@ -146,10 +147,10 @@ class SheetsRepository(
                     .get(SPREADSHEET_ID, readRange)
                     .execute()
 
-                val amountValues = amountResponse.values
+                val amountValues: List<List<Any?>>? = amountResponse.values
                 if (amountValues != null && amountValues.isNotEmpty()) {
-                    val firstRow = amountValues[0]
-                    val value = if (firstRow != null && firstRow.size > 0) firstRow[0]?.toString() else null
+                    val firstRow = amountValues.get(0)
+                    val value = if (firstRow != null && firstRow.isNotEmpty()) firstRow.get(0)?.toString() else null
                     return@retryWithBackoff Result.success(value?.toDoubleOrNull())
                 }
 
@@ -168,10 +169,10 @@ class SheetsRepository(
         try {
             val service = authManager.getSheetsService()
             service.spreadsheets().get(SPREADSHEET_ID).execute()
-            return Result.success(Unit)
+            Result.success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "Connection test failed")
-            return Result.failure(e)
+            Result.failure(e)
         }
     }
 
@@ -180,7 +181,7 @@ class SheetsRepository(
      */
     private inline fun <T> retryWithBackoff(
         maxRetries: Int,
-        crossinline action: () -> Result<T>
+        crossinline action: suspend () -> Result<T>
     ): Result<T> {
         var attempt = 0
         var lastException: Throwable? = null
