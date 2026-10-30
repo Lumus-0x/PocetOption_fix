@@ -145,7 +145,7 @@ class SheetsAuthManagerImpl @Inject constructor(
         } catch (e: ApiException) {
             // Get detailed error message based on status code
             val errorMsg = when (e.statusCode) {
-                com.google.android.gms.common.api.CommonStatusCodes.SIGN_IN_CANCELLED -> "User cancelled sign-in"
+                com.google.android.gms.common.api.CommonStatusCodes.CANCELED -> "User cancelled sign-in"
                 com.google.android.gms.common.api.CommonStatusCodes.NETWORK_ERROR -> "Network error during sign-in"
                 com.google.android.gms.common.api.CommonStatusCodes.INTERNAL_ERROR -> "Internal error during sign-in"
                 com.google.android.gms.common.api.CommonStatusCodes.API_NOT_CONNECTED -> "Google Play Services not connected"
