@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme - Material 3 -->
-    <style name="Theme.ScreenMonitor" parent="Theme.Material3.DayNight.DarkActionBar">
+    <style name="Theme.ScreenMonitor" parent="Theme.Material3.DayNight">
         <!-- Primary brand color -->
         <item name="colorPrimary">@color/md_theme_light_primary</item>
         <item name="colorPrimaryVariant">@color/md_theme_light_primaryContainer</item>
@@ -41,11 +41,24 @@
         <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.ScreenMonitor.Medium</item>
         <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.ScreenMonitor.Large</item>
         <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.ScreenMonitor.ExtraLarge</item>
+
+        <!-- Action bar styling for DarkActionBar look -->
+        <item name="actionBarStyle">@style/Widget.ScreenMonitor.ActionBar</item>
     </style>
 
     <style name="Theme.ScreenMonitor.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+    </style>
+
+    <!-- Action bar style for DarkActionBar appearance -->
+    <style name="Widget.ScreenMonitor.ActionBar" parent="Widget.Material3.ActionBar.Primary">
+        <item name="backgroundTint">?attr/colorPrimary</item>
+        <item name="titleTextAppearance">@style/TextAppearance.ScreenMonitor.ActionBarTitle</item>
+    </style>
+
+    <style name="TextAppearance.ScreenMonitor.ActionBarTitle" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textColor">?attr/colorOnPrimary</item>
     </style>
 
     <!-- Shape appearances for Material 3 -->
@@ -98,8 +111,8 @@
         <item name="android:textStyle">bold</item>
     </style>
 
-    <!-- Card style -->
-    <style name="Widget.ScreenMonitor.CardView" parent="Widget.Material3.CardView">
+    <!-- Card style - Material 3 uses elevated/filled/outlined variants -->
+    <style name="Widget.ScreenMonitor.CardView" parent="Widget.Material3.CardView.Elevated">
         <item name="cardCornerRadius">16dp</item>
         <item name="cardElevation">2dp</item>
     </style>
