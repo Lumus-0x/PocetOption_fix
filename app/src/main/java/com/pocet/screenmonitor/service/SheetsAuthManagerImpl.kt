@@ -120,17 +120,14 @@ class SheetsAuthManagerImpl @Inject constructor(
      * @return Result containing the signed-in account or error details
      */
     override suspend fun handleSignInResult(resultCode: Int, intent: android.content.Intent?): Result<GoogleSignInAccount> = withContext(Dispatchers.IO) {
-        // Check if user cancelled or there was an error
-        if (resultCode != Activity.RESULT_OK) {
-            val msg = when (resultCode) {
-                Activity.RESULT_CANCELED -> "User cancelled sign-in"
-                else -> "Sign-in failed with result code: $resultCode"
-            }
-            Timber.d(msg)
-            return@withContext Result.failure(Exception(msg))
-        }
+        Timber.d("handleSignInResult: resultCode=$resultCode, intent=${intent != null}")
+
+        // Always try to process the intent to get detailed error info
+        // Even if resultCode is CANCELED, the intent might contain error details
         if (intent == null) {
-            return@withContext Result.failure(Exception("No sign-in intent data received"))
+            val msg = "No sign-in intent data received (resultCode: $resultCode)"
+            Timber.w(msg)
+            return@withContext Result.failure(Exception(msg))
         }
 
         return@withContext try {
@@ -146,8 +143,17 @@ class SheetsAuthManagerImpl @Inject constructor(
             Timber.d("Sign-in successful for account: $accountName")
             Result.success(account)
         } catch (e: ApiException) {
-            val errorMsg = "Google Sign-In failed (${e.statusCode}): ${e.message ?: "Unknown error"}"
-            Timber.e(e, errorMsg)
+            // Get detailed error message based on status code
+            val errorMsg = when (e.statusCode) {
+                com.google.android.gms.common.api.CommonStatusCodes.SIGN_IN_CANCELLED -> "User cancelled sign-in"
+                com.google.android.gms.common.api.CommonStatusCodes.NETWORK_ERROR -> "Network error during sign-in"
+                com.google.android.gms.common.api.CommonStatusCodes.INTERNAL_ERROR -> "Internal error during sign-in"
+                com.google.android.gms.common.api.CommonStatusCodes.API_NOT_CONNECTED -> "Google Play Services not connected"
+                com.google.android.gms.common.api.CommonStatusCodes.DEVELOPER_ERROR -> "Developer error: check OAuth configuration and SHA-1 fingerprint"
+                com.google.android.gms.common.api.CommonStatusCodes.RESOLUTION_REQUIRED -> "Resolution required: ${e.message}"
+                else -> "Google Sign-In failed (${e.statusCode}): ${e.message ?: "Unknown error"}"
+            }
+            Timber.e(e, "Sign-in error: $errorMsg")
             Result.failure(Exception(errorMsg))
         } catch (e: Exception) {
             val errorMsg = "Unexpected error during sign-in: ${e.message ?: e::class.simpleName}"

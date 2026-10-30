@@ -1,19 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <ScrollView
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="@string/app_name"
+            app:navigationIcon="@drawable/ic_menu"
+            app:menu="@menu/menu_main" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -22,185 +40,204 @@
             android:padding="16dp"
             android:gravity="center_horizontal">
 
-            <!-- App Title -->
+            <!-- App Title / Hero Section -->
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:text="@string/section_title"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="@color/primary" />
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/app_name"
+                android:textAppearance="@style/TextAppearance.ScreenMonitor.HeadlineSmall"
+                android:textColor="?attr/colorPrimary" />
 
-            <!-- Status Section -->
-            <androidx.cardview.widget.CardView
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:gravity="center"
+                android:text="@string/desc_screen_capture"
+                android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <!-- Status Section Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.ScreenMonitor.CardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/section_status"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.TitleMedium"
+                        android:textColor="?attr/colorPrimary" />
 
                     <TextView
                         android:id="@+id/tvStatus"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:text="@string/status_checking"
-                        android:textSize="14sp"
-                        android:textColor="@color/on_surface" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyLarge"
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:id="@+id/tvLastSync"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                        android:layout_marginTop="8dp"
                         android:text="@string/status_stopped"
-                        android:textSize="12sp"
-                        android:textColor="@color/on_surface_variant" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Google Sign In Section -->
-            <androidx.cardview.widget.CardView
+            <!-- Google Sign In Section Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.ScreenMonitor.CardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/section_google_sheets"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.TitleMedium"
+                        android:textColor="?attr/colorPrimary" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSignIn"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="@string/btn_sign_in" />
+                        android:layout_marginTop="16dp"
+                        android:text="@string/btn_sign_in"
+                        app:icon="@drawable/ic_google"
+                        app:iconGravity="start"
+                        app:iconPadding="8dp"
+                        style="@style/Widget.ScreenMonitor.Button.Filled" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnTestConnection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:text="@string/btn_test_connection"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                        app:icon="@drawable/ic_cloud_sync"
+                        app:iconGravity="start"
+                        app:iconPadding="8dp"
+                        style="@style/Widget.ScreenMonitor.Button.Outlined" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Account Type Selection Section -->
-            <androidx.cardview.widget.CardView
+            <!-- Account Type Selection Section Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.ScreenMonitor.CardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/section_account_type"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.TitleMedium"
+                        android:textColor="?attr/colorPrimary" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:layout_marginBottom="12dp"
+                        android:layout_marginBottom="16dp"
                         android:text="@string/section_account_type_desc"
-                        android:textSize="12sp"
-                        android:textColor="@color/on_surface_variant" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
-                    <RadioGroup
+                    <com.google.android.material.radiobutton.MaterialRadioGroup
                         android:id="@+id/rgAccountType"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         android:checkedButton="@+id/rbReal">
 
-                        <RadioButton
+                        <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/rbReal"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
                             android:text="@string/rb_real"
-                            android:textSize="14sp"
-                            android:padding="8dp" />
+                            android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyLarge"
+                            android:padding="12dp"
+                            android:buttonTint="?attr/colorPrimary" />
 
-                        <RadioButton
+                        <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/rbDemo"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/rb_demo"
-                            android:textSize="14sp"
-                            android:padding="8dp" />
-                    </RadioGroup>
+                            android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyLarge"
+                            android:padding="12dp"
+                            android:buttonTint="?attr/colorPrimary" />
+                    </com.google.android.material.radiobutton.MaterialRadioGroup>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Screen Capture Section -->
-            <androidx.cardview.widget.CardView
+            <!-- Screen Capture Section Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.ScreenMonitor.CardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/section_screen_capture"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.TitleMedium"
+                        android:textColor="?attr/colorPrimary" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:layout_marginBottom="12dp"
+                        android:layout_marginBottom="16dp"
                         android:text="@string/section_screen_capture_desc"
-                        android:textSize="12sp"
-                        android:textColor="@color/on_surface_variant" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -209,98 +246,123 @@
                         android:gravity="center"
                         android:layout_marginTop="8dp">
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStartCapture"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginEnd="8dp"
-                            android:text="@string/btn_start_capture" />
+                            android:text="@string/btn_start_capture"
+                            app:icon="@drawable/ic_play_circle"
+                            app:iconGravity="start"
+                            app:iconPadding="8dp"
+                            style="@style/Widget.ScreenMonitor.Button.Filled" />
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnStopCapture"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginStart="8dp"
                             android:text="@string/btn_stop_capture"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                            app:icon="@drawable/ic_stop_circle"
+                            app:iconGravity="start"
+                            app:iconPadding="8dp"
+                            style="@style/Widget.ScreenMonitor.Button.Tonal" />
                     </LinearLayout>
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Permissions Section -->
-            <androidx.cardview.widget.CardView
+            <!-- Permissions Section Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.ScreenMonitor.CardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/section_permissions"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.TitleMedium"
+                        android:textColor="?attr/colorPrimary" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnRequestPermissions"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="16dp"
                         android:text="@string/btn_request_permissions"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                        app:icon="@drawable/ic_security"
+                        app:iconGravity="start"
+                        app:iconPadding="8dp"
+                        style="@style/Widget.ScreenMonitor.Button.Outlined" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:text="@string/desc_permissions"
-                        android:textSize="11sp"
-                        android:textColor="@color/on_surface_variant" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Info Section -->
-            <androidx.cardview.widget.CardView
+            <!-- Info Section Card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.ScreenMonitor.CardView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/section_how_it_works"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.TitleMedium"
+                        android:textColor="?attr/colorPrimary" />
 
-                                        <TextView
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:text="@string/desc_how_it_works"
-                        android:textSize="12sp"
-                        android:textColor="@color/on_surface_variant"
+                        android:textAppearance="@style/TextAppearance.ScreenMonitor.BodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:lineSpacingExtra="4dp" />
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
-    </ScrollView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Floating Action Button for quick actions -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabQuickAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/desc_quick_action"
+        android:src="@drawable/ic_refresh"
+        app:layout_anchor="@id/appBarLayout"
+        app:layout_anchorGravity="bottom|end"
+        app:fabSize="normal"
+        app:backgroundTint="?attr/colorSecondaryContainer"
+        app:tint="?attr/colorOnSecondaryContainer" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -290,6 +290,8 @@ class MainActivity : AppCompatActivity() {
                         btnSignIn.isEnabled = false
                         updateStatus(getString(R.string.status_signed_in, account.email))
                         Toast.makeText(this@MainActivity, getString(R.string.toast_signed_in_success), Toast.LENGTH_SHORT).show()
+                        // Auto-request permissions after successful sign-in
+                        requestAllPermissions()
                     }
                 } else {
                     val errorMsg = result.exceptionOrNull()?.message ?: getString(R.string.toast_sign_in_failed)
@@ -381,11 +383,20 @@ class MainActivity : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PermissionUtils.REQUEST_CODE_PERMISSIONS) {
-            val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            if (allGranted) {
+            val deniedPermissions = mutableListOf<String>()
+            for (i in permissions.indices) {
+                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                    deniedPermissions.add(permissions[i])
+                }
+            }
+
+            if (deniedPermissions.isEmpty()) {
                 Toast.makeText(this, getString(R.string.toast_all_permissions_granted), Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, getString(R.string.toast_some_permissions_denied), Toast.LENGTH_LONG).show()
+                val deniedList = deniedPermissions.joinToString(", ") { it.substringAfterLast(".") }
+                val msg = getString(R.string.toast_some_permissions_denied_detail, deniedList)
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                Timber.w("Denied permissions: $deniedList")
             }
         }
     }

@@ -1,39 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors -->
+    <!-- Material 3 Light Theme Colors -->
+    <color name="md_theme_light_primary">#1976D2</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_primaryContainer">#D6E4F0</color>
+    <color name="md_theme_light_onPrimaryContainer">#001D3D</color>
+
+    <color name="md_theme_light_secondary">#4A637A</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_secondaryContainer">#D6E4F0</color>
+    <color name="md_theme_light_onSecondaryContainer">#051F33</color>
+
+    <color name="md_theme_light_tertiary">#635B7A</color>
+    <color name="md_theme_light_onTertiary">#FFFFFF</color>
+    <color name="md_theme_light_tertiaryContainer">#E8DEF8</color>
+    <color name="md_theme_light_onTertiaryContainer">#1F192F</color>
+
+    <color name="md_theme_light_error">#D32F2F</color>
+    <color name="md_theme_light_onError">#FFFFFF</color>
+    <color name="md_theme_light_errorContainer">#FCD8D8</color>
+    <color name="md_theme_light_onErrorContainer">#410002</color>
+
+    <color name="md_theme_light_surface">#FFFBFE</color>
+    <color name="md_theme_light_onSurface">#1D1D1F</color>
+    <color name="md_theme_light_surfaceVariant">#E7E2EC</color>
+    <color name="md_theme_light_onSurfaceVariant">#4A4451</color>
+
+    <color name="md_theme_light_outline">#7A7580</color>
+    <color name="md_theme_light_outlineVariant">#CAC4D0</color>
+
+    <color name="md_theme_light_background">#FFFBFE</color>
+    <color name="md_theme_light_onBackground">#1D1D1F</color>
+
+    <color name="md_theme_light_inverseSurface">#343336</color>
+    <color name="md_theme_light_inverseOnSurface">#F7F3F9</color>
+    <color name="md_theme_light_inversePrimary">#A6C8EE</color>
+
+    <color name="md_theme_light_shadow">#000000</color>
+    <color name="md_theme_light_scrim">#000000</color>
+    <color name="md_theme_light_surfaceTint">#1976D2</color>
+
+    <!-- Material 3 Dark Theme Colors -->
+    <color name="md_theme_dark_primary">#A6C8EE</color>
+    <color name="md_theme_dark_onPrimary">#00335E</color>
+    <color name="md_theme_dark_primaryContainer">#00498A</color>
+    <color name="md_theme_dark_onPrimaryContainer">#D6E4F0</color>
+
+    <color name="md_theme_dark_secondary">#BAC8E0</color>
+    <color name="md_theme_dark_onSecondary">#1F354A</color>
+    <color name="md_theme_dark_secondaryContainer">#354D63</color>
+    <color name="md_theme_dark_onSecondaryContainer">#D6E4F0</color>
+
+    <color name="md_theme_dark_tertiary">#CCC2E0</color>
+    <color name="md_theme_dark_onTertiary">#332B48</color>
+    <color name="md_theme_dark_tertiaryContainer">#4A435E</color>
+    <color name="md_theme_dark_onTertiaryContainer">#E8DEF8</color>
+
+    <color name="md_theme_dark_error">#F2B8B5</color>
+    <color name="md_theme_dark_onError">#601410</color>
+    <color name="md_theme_dark_errorContainer">#8C1D18</color>
+    <color name="md_theme_dark_onErrorContainer">#FCD8D8</color>
+
+    <color name="md_theme_dark_surface">#1D1D1F</color>
+    <color name="md_theme_dark_onSurface">#E8E6EA</color>
+    <color name="md_theme_dark_surfaceVariant">#4A4451</color>
+    <color name="md_theme_dark_onSurfaceVariant">#CAC4D0</color>
+
+    <color name="md_theme_dark_outline">#938F99</color>
+    <color name="md_theme_dark_outlineVariant">#4A4451</color>
+
+    <color name="md_theme_dark_background">#1D1D1F</color>
+    <color name="md_theme_dark_onBackground">#E8E6EA</color>
+
+    <color name="md_theme_dark_inverseSurface">#E8E6EA</color>
+    <color name="md_theme_dark_inverseOnSurface">#343336</color>
+    <color name="md_theme_dark_inversePrimary">#1976D2</color>
+
+    <color name="md_theme_dark_shadow">#000000</color>
+    <color name="md_theme_dark_scrim">#000000</color>
+    <color name="md_theme_dark_surfaceTint">#A6C8EE</color>
+
+    <!-- Legacy color names for backward compatibility -->
     <color name="primary">#1976D2</color>
     <color name="primary_variant">#1565C0</color>
     <color name="on_primary">#FFFFFF</color>
-
-    <!-- Secondary Colors -->
     <color name="secondary">#03DAC6</color>
     <color name="secondary_variant">#018786</color>
     <color name="on_secondary">#000000</color>
-
-    <!-- Surface Colors -->
     <color name="surface">#FFFFFF</color>
     <color name="on_surface">#1D1D1F</color>
     <color name="on_surface_variant">#757575</color>
-
-    <!-- Background -->
     <color name="background">#F5F5F5</color>
     <color name="on_background">#1D1D1F</color>
-
-    <!-- Error -->
     <color name="error">#D32F2F</color>
     <color name="on_error">#FFFFFF</color>
-
-    <!-- Success -->
     <color name="success">#388E3C</color>
     <color name="on_success">#FFFFFF</color>
-
-    <!-- Warning -->
     <color name="warning">#F57C00</color>
     <color name="on_warning">#FFFFFF</color>
-
-    <!-- Divider -->
     <color name="divider">#E0E0E0</color>
-
-    <!-- Transparent -->
     <color name="transparent">#00000000</color>
 </resources>

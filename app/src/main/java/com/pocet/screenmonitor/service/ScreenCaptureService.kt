@@ -294,21 +294,47 @@ class ScreenCaptureService : Service() {
         Timber.d("Stopping screen capture")
         isCapturing = false
 
+        // Cancel coroutines safely
         captureJob.cancel()
         mainJob.cancel()
 
-        virtualDisplay?.release()
+        // Release virtual display
+        try {
+            virtualDisplay?.release()
+        } catch (e: Exception) {
+            Timber.e(e, "Error releasing virtual display")
+        }
         virtualDisplay = null
 
-        imageReader?.close()
+        // Close image reader
+        try {
+            imageReader?.close()
+        } catch (e: Exception) {
+            Timber.e(e, "Error closing image reader")
+        }
         imageReader = null
 
-        mediaProjection?.stop()
+        // Stop media projection
+        try {
+            mediaProjection?.stop()
+        } catch (e: Exception) {
+            Timber.e(e, "Error stopping media projection")
+        }
         mediaProjection = null
 
-        ocrProcessor.close()
+        // Close OCR processor
+        try {
+            ocrProcessor.close()
+        } catch (e: Exception) {
+            Timber.e(e, "Error closing OCR processor")
+        }
 
-        stopForeground(true)
+        // Stop foreground service
+        try {
+            stopForeground(true)
+        } catch (e: Exception) {
+            Timber.e(e, "Error stopping foreground service")
+        }
     }
 
     private fun showForegroundNotification() {
