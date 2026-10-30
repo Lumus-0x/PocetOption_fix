@@ -10,7 +10,6 @@ import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.pocet.screenmonitor.service.OcrProcessor
 import com.pocet.screenmonitor.service.SheetsAuthManager
-import com.pocet.screenmonitor.service.SheetsAuthManagerImpl
 import com.pocet.screenmonitor.service.SheetsRepository
 import com.pocet.screenmonitor.service.TextParser
 import com.pocet.screenmonitor.util.BatteryOptimizationUtils
@@ -33,17 +32,6 @@ object AppModule {
             .requestScopes(com.google.android.gms.common.api.Scope(SheetsScopes.SPREADSHEETS))
             .requestEmail()
             .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideSheetsAuthManager(
-        @ApplicationContext context: Context,
-        googleSignInOptions: GoogleSignInOptions
-    ): SheetsAuthManager {
-        val manager = SheetsAuthManagerImpl(context)
-        manager.initialize(googleSignInOptions)
-        return manager
     }
 
     @Provides

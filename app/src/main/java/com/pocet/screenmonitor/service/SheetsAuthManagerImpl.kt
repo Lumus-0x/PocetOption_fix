@@ -17,6 +17,8 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.pocet.screenmonitor.util.EncryptedPrefsUtil
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,7 +26,10 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Collections
 
-class SheetsAuthManagerImpl(private val context: Context) : SheetsAuthManager {
+class SheetsAuthManagerImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
+    googleSignInOptions: GoogleSignInOptions
+) : SheetsAuthManager {
 
     private val authScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var googleSignInClient: GoogleSignInClient? = null
@@ -35,6 +40,10 @@ class SheetsAuthManagerImpl(private val context: Context) : SheetsAuthManager {
     companion object {
         private const val PREF_KEY_ACCOUNT_NAME = "google_account_name"
         private const val TAG = "SheetsAuthManagerImpl"
+    }
+
+    init {
+        initialize(googleSignInOptions)
     }
 
     /**
