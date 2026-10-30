@@ -42,7 +42,7 @@
         <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.ScreenMonitor.Large</item>
         <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.ScreenMonitor.ExtraLarge</item>
 
-        <!-- Action bar styling for DarkActionBar look -->
+        <!-- Action bar styling for DarkActionBar look (using MaterialComponents widget) -->
         <item name="actionBarStyle">@style/Widget.ScreenMonitor.ActionBar</item>
     </style>
 
@@ -52,7 +52,7 @@
     </style>
 
     <!-- Action bar style for DarkActionBar appearance -->
-    <style name="Widget.ScreenMonitor.ActionBar" parent="Widget.Material3.ActionBar">
+    <style name="Widget.ScreenMonitor.ActionBar" parent="Widget.MaterialComponents.ActionBar.Primary">
         <item name="backgroundTint">?attr/colorPrimary</item>
         <item name="titleTextAppearance">@style/TextAppearance.ScreenMonitor.ActionBarTitle</item>
     </style>
@@ -62,27 +62,27 @@
     </style>
 
     <!-- Shape appearances for Material 3 -->
-    <style name="ShapeAppearance.ScreenMonitor.Small" parent="ShapeAppearance.Material3.SmallComponent">
+    <style name="ShapeAppearance.ScreenMonitor.Small" parent="ShapeAppearance.MaterialComponents.SmallComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">4dp</item>
     </style>
 
-    <style name="ShapeAppearance.ScreenMonitor.Medium" parent="ShapeAppearance.Material3.MediumComponent">
+    <style name="ShapeAppearance.ScreenMonitor.Medium" parent="ShapeAppearance.MaterialComponents.MediumComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">12dp</item>
     </style>
 
-    <style name="ShapeAppearance.ScreenMonitor.Large" parent="ShapeAppearance.Material3.LargeComponent">
+    <style name="ShapeAppearance.ScreenMonitor.Large" parent="ShapeAppearance.MaterialComponents.LargeComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">16dp</item>
     </style>
 
-    <style name="ShapeAppearance.ScreenMonitor.ExtraLarge" parent="ShapeAppearance.Material3.LargeComponent">
+    <style name="ShapeAppearance.ScreenMonitor.ExtraLarge" parent="ShapeAppearance.MaterialComponents.LargeComponent">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">28dp</item>
     </style>
 
-    <!-- Button styles -->
+    <!-- Button styles (Material 3) -->
     <style name="Widget.ScreenMonitor.Button.Filled" parent="Widget.Material3.Button">
         <item name="cornerRadius">12dp</item>
         <item name="android:insetTop">0dp</item>
@@ -111,8 +111,8 @@
         <item name="android:textStyle">bold</item>
     </style>
 
-    <!-- Card style - Material 3 base CardView -->
-    <style name="Widget.ScreenMonitor.CardView" parent="Widget.Material3.CardView">
+    <!-- Card style (MaterialComponents) -->
+    <style name="Widget.ScreenMonitor.CardView" parent="Widget.MaterialComponents.CardView">
         <item name="cardCornerRadius">16dp</item>
         <item name="cardElevation">2dp</item>
     </style>
