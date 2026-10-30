@@ -8,6 +8,7 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
+import com.pocet.screenmonitor.service.CaptureScheduler
 import com.pocet.screenmonitor.service.OcrProcessor
 import com.pocet.screenmonitor.service.SheetsAuthManager
 import com.pocet.screenmonitor.service.SheetsRepository
@@ -68,6 +69,12 @@ object AppModule {
     @Singleton
     fun provideBatteryOptimizationUtils(@ApplicationContext context: Context): BatteryOptimizationUtils {
         return BatteryOptimizationUtils(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCaptureScheduler(@ApplicationContext context: Context): CaptureScheduler {
+        return CaptureScheduler(context)
     }
 
     @Provides
