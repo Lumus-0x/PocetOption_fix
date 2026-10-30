@@ -28,7 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                android:text="Screen Monitor Balance Sync"
+                android:text="@string/section_title"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@color/primary" />
@@ -50,7 +50,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Status"
+                        android:text="@string/section_status"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary" />
@@ -60,7 +60,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Status: Checking..."
+                        android:text="@string/status_checking"
                         android:textSize="14sp"
                         android:textColor="@color/on_surface" />
 
@@ -69,7 +69,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Last sync: Never"
+                        android:text="@string/status_stopped"
                         android:textSize="12sp"
                         android:textColor="@color/on_surface_variant" />
                 </LinearLayout>
@@ -92,7 +92,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Google Sheets Access"
+                        android:text="@string/section_google_sheets"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary" />
@@ -102,14 +102,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Sign In to Google" />
+                        android:text="@string/btn_sign_in" />
 
                     <Button
                         android:id="@+id/btnTestConnection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Test Connection"
+                        android:text="@string/btn_test_connection"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -131,7 +131,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Account Type to Monitor"
+                        android:text="@string/section_account_type"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary" />
@@ -141,7 +141,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="12dp"
-                        android:text="Select which account type to detect on screen"
+                        android:text="@string/section_account_type_desc"
                         android:textSize="12sp"
                         android:textColor="@color/on_surface_variant" />
 
@@ -156,7 +156,7 @@
                             android:id="@+id/rbReal"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="QT Real USD"
+                            android:text="@string/rb_real"
                             android:textSize="14sp"
                             android:padding="8dp" />
 
@@ -164,7 +164,7 @@
                             android:id="@+id/rbDemo"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="QT Demo USD"
+                            android:text="@string/rb_demo"
                             android:textSize="14sp"
                             android:padding="8dp" />
                     </RadioGroup>
@@ -188,7 +188,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Screen Capture"
+                        android:text="@string/section_screen_capture"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary" />
@@ -198,7 +198,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="12dp"
-                        android:text="Monitors screen for selected account type and writes balance to Google Sheets"
+                        android:text="@string/section_screen_capture_desc"
                         android:textSize="12sp"
                         android:textColor="@color/on_surface_variant" />
 
@@ -215,7 +215,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginEnd="8dp"
-                            android:text="Start Capture" />
+                            android:text="@string/btn_start_capture" />
 
                         <Button
                             android:id="@+id/btnStopCapture"
@@ -223,7 +223,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:layout_marginStart="8dp"
-                            android:text="Stop Capture"
+                            android:text="@string/btn_stop_capture"
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
                     </LinearLayout>
                 </LinearLayout>
@@ -246,7 +246,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Permissions &amp; Settings"
+                        android:text="@string/section_permissions"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary" />
@@ -256,14 +256,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Request All Permissions"
+                        android:text="@string/btn_request_permissions"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Required: Battery optimization exemption, Exact alarms (Android 14+), Notifications (Android 13+)"
+                        android:text="@string/desc_permissions"
                         android:textSize="11sp"
                         android:textColor="@color/on_surface_variant" />
                 </LinearLayout>
@@ -285,7 +285,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="How It Works"
+                        android:text="@string/section_how_it_works"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary" />

@@ -3,28 +3,63 @@
     <string name="app_short_name">ScreenMonitor</string>
 
     <!-- Status messages -->
-    <string name="status_checking">Checking permissions...</string>
-    <string name="status_running">Running - Capturing screen</string>
-    <string name="status_stopped">Stopped</string>
-    <string name="status_need_signin">Please sign in to Google</string>
-    <string name="status_need_permissions">Please grant required permissions</string>
+    <string name="status_checking">Проверка разрешений…</string>
+    <string name="status_running">Работает — захват экрана</string>
+    <string name="status_stopped">Остановлено</string>
+    <string name="status_need_signin">Необходимо войти в Google</string>
+    <string name="status_need_permissions">Требуются разрешения</string>
+    <string name="status_signed_in">✅ Выполнен вход: %s</string>
+    <string name="status_sign_in_failed">❌ Вход не выполнен</string>
+    <string name="status_signed_out">❌ Не выполнен вход в Google</string>
+    <string name="status_testing_connection">🔄 Проверка соединения с Google Таблицами…</string>
+    <string name="status_connection_success">✅ Соединение с Google Таблицами успешно</string>
 
     <!-- Button texts -->
-    <string name="btn_start_capture">Start Capture</string>
-    <string name="btn_stop_capture">Stop Capture</string>
-    <string name="btn_sign_in">Sign In to Google</string>
-    <string name="btn_test_connection">Test Connection</string>
-    <string name="btn_request_permissions">Request All Permissions</string>
+    <string name="btn_start_capture">Начать захват</string>
+    <string name="btn_stop_capture">Остановить захват</string>
+    <string name="btn_sign_in">Войти в Google</string>
+    <string name="btn_signed_in">Вход выполнен ✓</string>
+    <string name="btn_test_connection">Проверить соединение</string>
+    <string name="btn_request_permissions">Запросить все разрешения</string>
 
     <!-- Descriptions -->
-    <string name="desc_how_it_works">1. Sign in to Google to access your Sheets\n2. Grant screen capture permission\n3. Disable battery optimization for this app\n4. Start capture - app runs in background\n5. When "qt real usd" or "qt demo usd" detected, balance is written to column E at today\'s date row (B6:B35)</string>
+    <string name="desc_how_it_works">1. Войдите в Google для доступа к Таблицам\n2. Разрешите захват экрана\n3. Отключите оптимизацию батареи для приложения\n4. Начните захват — приложение работает в фоне\n5. При обнаружении "qt real usd" или "qt demo usd" баланс записывается в столбец E в строку с сегодняшней датой (B6:B35)</string>
 
-    <string name="desc_permissions">Required: Battery optimization exemption, Exact alarms (Android 14+), Notifications (Android 13+)</string>
-    <string name="desc_screen_capture">Monitors screen for "qt real usd" or "qt demo usd" and writes balance to Google Sheets</string>
+    <string name="desc_permissions">Необходимо: исключение из оптимизации батареи, точные будильники (Android 14+), уведомления (Android 13+)</string>
+    <string name="desc_screen_capture">Отслеживает "qt real usd" или "qt demo usd" на экране и записывает баланс в Google Таблицы</string>
+
+    <!-- Section titles -->
+    <string name="section_title">Screen Monitor Balance Sync</string>
+    <string name="section_status">Статус</string>
+    <string name="section_google_sheets">Доступ к Google Таблицам</string>
+    <string name="section_account_type">Тип аккаунта для мониторинга</string>
+    <string name="section_account_type_desc">Выберите, какой тип аккаунта искать на экране</string>
+    <string name="section_screen_capture">Захват экрана</string>
+    <string name="section_screen_capture_desc">Отслеживает выбранный тип аккаунта на экране и записывает баланс в Google Таблицы</string>
+    <string name="section_permissions">Разрешения и настройки</string>
+    <string name="section_how_it_works">Как это работает</string>
+
+    <!-- Radio buttons -->
+    <string name="rb_real">QT Real USD</string>
+    <string name="rb_demo">QT Demo USD</string>
+
+    <!-- Toasts -->
+    <string name="toast_signed_in_success">Вход выполнен успешно</string>
+    <string name="toast_sign_in_failed">Ошибка входа</string>
+    <string name="toast_sign_in_intent_failed">Не удалось создать запрос входа</string>
+    <string name="toast_capture_started">Захват экрана запущен</string>
+    <string name="toast_capture_permission_required">Требуется разрешение на захват экрана</string>
+    <string name="toast_capture_stopped">Захват экрана остановлен</string>
+    <string name="toast_all_permissions_granted">Все разрешения получены</string>
+    <string name="toast_some_permissions_denied">Некоторые разрешения отклонены</string>
+    <string name="toast_account_type_changed_restart">⚠️ Тип аккаунта изменен. Перезапустите захват.</string>
+    <string name="toast_connection_success">Соединение успешно!</string>
+    <string name="toast_connection_failed">Ошибка соединения: %s</string>
+    <string name="toast_sign_in_first">Сначала выполните вход в Google</string>
 
     <!-- Notifications -->
-    <string name="notification_channel_name">Screen Capture Service</string>
-    <string name="notification_channel_description">Captures screen for trading balance detection</string>
-    <string name="notification_title">Screen Monitor Active</string>
-    <string name="notification_text">Capturing screen for balance detection...</string>
+    <string name="notification_channel_name">Служба захвата экрана</string>
+    <string name="notification_channel_description">Захват экрана для определения баланса</string>
+    <string name="notification_title">Screen Monitor активен</string>
+    <string name="notification_text">Захват экрана для определения баланса…</string>
 </resources>

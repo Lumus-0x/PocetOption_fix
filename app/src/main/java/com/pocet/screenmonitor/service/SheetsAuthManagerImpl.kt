@@ -114,17 +114,33 @@ class SheetsAuthManagerImpl @Inject constructor(
 
     /**
      * Handle sign-in result from Activity
+     * @param resultCode The result code from the activity (Activity.RESULT_OK, Activity.RESULT_CANCELED, etc.)
+     * @param intent The intent data from the sign-in activity
      */
-    override suspend fun handleSignInResult(intent: android.content.Intent?): GoogleSignInAccount? = withContext(Dispatchers.IO) {
-        if (intent == null) return@withContext null
+    override suspend fun handleSignInResult(resultCode: Int, intent: android.content.Intent?): GoogleSignInAccount? = withContext(Dispatchers.IO) {
+        // Check if user cancelled or there was an error
+        if (resultCode != Activity.RESULT_OK || intent == null) {
+            Timber.d("Sign-in cancelled or failed with resultCode: $resultCode")
+            return@withContext null
+        }
 
         return@withContext try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
             val account = Tasks.await(task)
-            encryptedPrefs.putString(PREF_KEY_ACCOUNT_NAME, account.account?.name ?: "")
+
+            // Save account name for future silent sign-in attempts
+            val accountName = account.account?.name ?: ""
+            if (accountName.isNotEmpty()) {
+                encryptedPrefs.putString(PREF_KEY_ACCOUNT_NAME, accountName)
+            }
+
+            Timber.d("Sign-in successful for account: $accountName")
             account
         } catch (e: ApiException) {
-            Timber.e(e, "Sign-in failed: ${e.statusCode}")
+            Timber.e(e, "Sign-in failed: ${e.statusCode} - ${e.message}")
+            null
+        } catch (e: Exception) {
+            Timber.e(e, "Unexpected error during sign-in")
             null
         }
     }
@@ -137,7 +153,8 @@ class SheetsAuthManagerImpl @Inject constructor(
             context,
             Collections.singleton(SheetsScopes.SPREADSHEETS)
         )
-        credential.selectedAccount = account.account
+        // Handle null account gracefully - if account is null, credential will use default account
+        account.account?.let { credential.selectedAccount = it }
         return credential
     }
 

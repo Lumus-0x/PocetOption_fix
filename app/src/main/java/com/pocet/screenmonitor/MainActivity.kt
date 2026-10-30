@@ -184,7 +184,7 @@ class MainActivity : AppCompatActivity() {
 
         // If service is running, we need to restart it to pick up the new preference
         if (captureScheduler.isServiceRunning()) {
-            updateStatus("⚠️ Account type changed. Restart capture to apply.")
+            updateStatus(getString(R.string.toast_account_type_changed_restart))
         }
     }
 
@@ -207,19 +207,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkBatteryOptimization() {
         if (!batteryUtils.isIgnoringBatteryOptimizations()) {
-            updateStatus("⚠️ Battery optimization not disabled - app may be killed in background")
+            updateStatus(getString(R.string.status_need_permissions))
         }
     }
 
     private fun checkExactAlarmPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !batteryUtils.canScheduleExactAlarms()) {
-            updateStatus("⚠️ Exact alarm permission not granted - scheduling may be inexact")
+            updateStatus(getString(R.string.status_need_permissions))
         }
     }
 
     private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !batteryUtils.hasNotificationPermission()) {
-            updateStatus("⚠️ Notification permission not granted")
+            updateStatus(getString(R.string.status_need_permissions))
         }
     }
 
@@ -228,13 +228,14 @@ class MainActivity : AppCompatActivity() {
             val isSignedIn = authManager.isSignedIn()
             runOnUiThread {
                 if (isSignedIn) {
-                    btnSignIn.text = "Signed In ✓"
+                    btnSignIn.text = getString(R.string.btn_signed_in)
                     btnSignIn.isEnabled = false
-                    updateStatus("✅ Google account connected")
+                    // Note: We don't have email here, just show signed in status
+                    updateStatus(getString(R.string.status_signed_in, ""))
                 } else {
-                    btnSignIn.text = "Sign In to Google"
+                    btnSignIn.text = getString(R.string.btn_sign_in)
                     btnSignIn.isEnabled = true
-                    updateStatus("❌ Not signed in to Google")
+                    updateStatus(getString(R.string.status_signed_out))
                 }
             }
         }
@@ -260,12 +261,12 @@ class MainActivity : AppCompatActivity() {
 
             captureScheduler.setServiceRunning(true)
             updateServiceStatusUI()
-            updateStatus("✅ Screen capture started")
-            Toast.makeText(this, "Screen capture started", Toast.LENGTH_SHORT).show()
+            updateStatus(getString(R.string.status_running))
+            Toast.makeText(this, getString(R.string.toast_capture_started), Toast.LENGTH_SHORT).show()
         } else {
             Timber.w("MediaProjection denied or cancelled")
-            updateStatus("❌ Screen capture permission denied")
-            Toast.makeText(this, "Screen capture permission required", Toast.LENGTH_LONG).show()
+            updateStatus(getString(R.string.status_need_permissions))
+            Toast.makeText(this, getString(R.string.toast_capture_permission_required), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -274,29 +275,29 @@ class MainActivity : AppCompatActivity() {
         if (intent != null) {
             signInLauncher.launch(intent)
         } else {
-            Toast.makeText(this, "Failed to create sign-in intent", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_sign_in_intent_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun handleSignInResult(resultCode: Int, data: Intent?) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val account = authManager.handleSignInResult(data)
+            val account = authManager.handleSignInResult(resultCode, data)
             runOnUiThread {
                 if (account != null) {
-                    btnSignIn.text = "Signed In ✓"
+                    btnSignIn.text = getString(R.string.btn_signed_in)
                     btnSignIn.isEnabled = false
-                    updateStatus("✅ Signed in as ${account.email}")
-                    Toast.makeText(this@MainActivity, "Signed in successfully", Toast.LENGTH_SHORT).show()
+                    updateStatus(getString(R.string.status_signed_in, account.email))
+                    Toast.makeText(this@MainActivity, getString(R.string.toast_signed_in_success), Toast.LENGTH_SHORT).show()
                 } else {
-                    updateStatus("❌ Sign in failed")
-                    Toast.makeText(this@MainActivity, "Sign in failed", Toast.LENGTH_SHORT).show()
+                    updateStatus(getString(R.string.status_sign_in_failed))
+                    Toast.makeText(this@MainActivity, getString(R.string.toast_sign_in_failed), Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
     private fun testSheetsConnection() {
-        updateStatus("🔄 Testing Google Sheets connection...")
+        updateStatus(getString(R.string.status_testing_connection))
         btnTestConnection.isEnabled = false
 
         lifecycleScope.launch(Dispatchers.IO) {
@@ -306,18 +307,19 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     btnTestConnection.isEnabled = true
                     if (result.isSuccess) {
-                        updateStatus("✅ Google Sheets connection successful")
-                        Toast.makeText(this@MainActivity, "Connection successful!", Toast.LENGTH_SHORT).show()
+                        updateStatus(getString(R.string.status_connection_success))
+                        Toast.makeText(this@MainActivity, getString(R.string.toast_connection_success), Toast.LENGTH_SHORT).show()
                     } else {
-                        updateStatus("❌ Connection failed: ${result.exceptionOrNull()?.message}")
-                        Toast.makeText(this@MainActivity, "Connection failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                        val errorMsg = result.exceptionOrNull()?.message ?: "Unknown error"
+                        updateStatus(getString(R.string.toast_connection_failed, errorMsg))
+                        Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, errorMsg), Toast.LENGTH_LONG).show()
                     }
                 }
             } else {
                 runOnUiThread {
                     btnTestConnection.isEnabled = true
-                    updateStatus("❌ Not authenticated - please sign in first")
-                    Toast.makeText(this@MainActivity, "Please sign in to Google first", Toast.LENGTH_SHORT).show()
+                    updateStatus(getString(R.string.status_need_signin))
+                    Toast.makeText(this@MainActivity, getString(R.string.toast_sign_in_first), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -330,8 +332,8 @@ class MainActivity : AppCompatActivity() {
         ContextCompat.startForegroundService(this, intent)
         captureScheduler.setServiceRunning(false)
         updateServiceStatusUI()
-        updateStatus("🛑 Screen capture stopped")
-        Toast.makeText(this, "Screen capture stopped", Toast.LENGTH_SHORT).show()
+        updateStatus(getString(R.string.status_stopped))
+        Toast.makeText(this, getString(R.string.toast_capture_stopped), Toast.LENGTH_SHORT).show()
     }
 
     private fun updateServiceStatusUI() {
@@ -341,9 +343,9 @@ class MainActivity : AppCompatActivity() {
         btnStopCapture.isEnabled = isRunning
 
         if (isRunning) {
-            tvStatus.text = "Status: Running (capturing screen)"
+            tvStatus.text = getString(R.string.status_running)
         } else {
-            tvStatus.text = "Status: Stopped"
+            tvStatus.text = getString(R.string.status_stopped)
         }
     }
 
@@ -377,9 +379,9 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == PermissionUtils.REQUEST_CODE_PERMISSIONS) {
             val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
             if (allGranted) {
-                Toast.makeText(this, "All permissions granted", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.toast_all_permissions_granted), Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Some permissions denied", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.toast_some_permissions_denied), Toast.LENGTH_LONG).show()
             }
         }
     }
