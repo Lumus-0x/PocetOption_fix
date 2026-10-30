@@ -64,7 +64,7 @@ class SheetsRepository(
             dateValues?.let { values ->
                 for (i in 0 until values.size) {
                     val row = values.get(i)
-                    val cellValue = row?.getOrNull(0)?.toString()?.trim() ?: ""
+                    val cellValue = if (row != null && row.size > 0) row.get(0)?.toString()?.trim() ?: "" else ""
                     val normalizedDate = dateUtils.normalizeForComparison(cellValue)
                     if (normalizedDate == today) {
                         targetRowIndex = i
@@ -140,7 +140,7 @@ class SheetsRepository(
             dateValues?.let { values ->
                 for (i in 0 until values.size) {
                     val row = values.get(i)
-                    val cellValue = row?.getOrNull(0)?.toString()?.trim() ?: ""
+                    val cellValue = if (row != null && row.size > 0) row.get(0)?.toString()?.trim() ?: "" else ""
                     val normalizedDate = dateUtils.normalizeForComparison(cellValue)
                     if (normalizedDate == today) {
                         targetRowIndex = i
@@ -164,7 +164,7 @@ class SheetsRepository(
             val amountValues: List<List<Any?>>? = amountResponse.values as? List<List<Any?>>
             if (amountValues != null && amountValues.isNotEmpty()) {
                 val firstRow = amountValues.get(0)
-                val value = firstRow?.getOrNull(0)?.toString()
+                val value = if (firstRow != null && firstRow.size > 0) firstRow.get(0)?.toString() else null
                 return Result.success(value?.toDoubleOrNull())
             }
 

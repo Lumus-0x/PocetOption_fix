@@ -40,17 +40,22 @@ class OcrProcessor {
 
         isProcessing = true
         try {
-            // Convert Image to Bitmap for ML Kit
-            val bitmap = imageToBitmap(image)
-            if (bitmap == null) {
-                return@withContext BalanceResult.unknown("Failed to convert image")
+            // Create InputImage directly from media.Image
+            // ML Kit supports YUV_420_888 and NV21 formats directly
+            val inputImage: InputImage
+            if (image.format == ImageFormat.YUV_420_888 || image.format == ImageFormat.NV21) {
+                // Use direct media image input for YUV formats
+                inputImage = InputImage.fromMediaImage(image, 0)
+            } else {
+                // For RGBA_8888, convert to Bitmap first
+                val bitmap = imageToBitmap(image)
+                if (bitmap == null) {
+                    return@withContext BalanceResult.unknown("Failed to convert image")
+                }
+                // Downscale for faster OCR
+                val scaledBitmap = downscaleBitmap(bitmap)
+                inputImage = InputImage.fromBitmap(scaledBitmap, 0)
             }
-
-            // Downscale for faster OCR
-            val scaledBitmap = downscaleBitmap(bitmap)
-
-            // Create InputImage from Bitmap
-            val inputImage = InputImage.fromBitmap(scaledBitmap, 0)
 
             // Run text recognition
             val task = textRecognizer.process(inputImage)
@@ -83,8 +88,9 @@ class OcrProcessor {
     }
 
     /**
-     * Convert Android Media Image to Bitmap
-     * Handles both RGBA_8888 (from ImageReader) and YUV_420_888 formats
+     * Convert Android Media Image to Bitmap (fallback for RGBA_8888)
+     * Handles RGBA_8888 format (from ImageReader with PixelFormat.RGBA_8888)
+     * Note: For YUV_420_888, we use InputImage.fromMediaImage directly in processImage
      */
     private fun imageToBitmap(image: Image): Bitmap? {
         val planes = image.planes
@@ -100,53 +106,9 @@ class OcrProcessor {
             return bitmap
         }
 
-        // Handle YUV_420_888 format
-        if (image.format == ImageFormat.YUV_420_888 && planes.size >= 3) {
-            val yBuffer = planes[0].buffer
-            val uBuffer = planes[1].buffer
-            val vBuffer = planes[2].buffer
-
-            val ySize = yBuffer.remaining()
-            val uSize = uBuffer.remaining()
-            val vSize = vBuffer.remaining()
-
-            val nv21 = ByteArray(ySize + uSize + vSize)
-
-            // Y plane
-            yBuffer.get(nv21, 0, ySize)
-
-            // VU interleaved (NV21 format)
-            val uvStride = planes[1].pixelStride
-            val uvRowStride = planes[1].rowStride
-
-            var nv21Index = ySize
-            for (row in 0 until height / 2) {
-                val uOffset = row * uvRowStride
-                val vOffset = row * uvRowStride
-
-                for (col in 0 until width / 2) {
-                    val uIndex = uOffset + col * uvStride
-                    val vIndex = vOffset + col * uvStride
-
-                    if (uIndex < uBuffer.capacity() && vIndex < vBuffer.capacity()) {
-                        uBuffer.position(uIndex)
-                        vBuffer.position(vIndex)
-                        nv21[nv21Index++] = vBuffer.get() // V first in NV21
-                        nv21[nv21Index++] = uBuffer.get() // U second in NV21
-                    }
-                }
-            }
-
-            val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-
-            // Use compressToBitmap (deprecated but works) to draw directly to bitmap
-            val rect = Rect(0, 0, width, height)
-            yuvImage.compressToBitmap(rect, bitmap)
-            return bitmap
-        }
-
-        Timber.w("Unsupported image format: ${image.format}, planes: ${planes.size}")
+        // For YUV_420_888, we don't convert to Bitmap here
+        // Instead, processImage uses InputImage.fromMediaImage directly
+        Timber.w("Unsupported image format for bitmap conversion: ${image.format}, planes: ${planes.size}")
         return null
     }
 
