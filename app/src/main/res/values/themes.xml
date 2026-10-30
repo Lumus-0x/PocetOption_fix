@@ -104,25 +104,25 @@
         <item name="cardElevation">2dp</item>
     </style>
 
-    <!-- Text appearance -->
-    <style name="TextAppearance.ScreenMonitor.HeadlineSmall" parent="TextAppearance.MaterialComponents.Headline6">
+    <!-- Text appearance (Material 3) -->
+    <style name="TextAppearance.ScreenMonitor.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
         <item name="fontFamily">sans-serif-medium</item>
         <item name="android:letterSpacing">0</item>
     </style>
 
-    <style name="TextAppearance.ScreenMonitor.TitleMedium" parent="TextAppearance.MaterialComponents.Subtitle1">
+    <style name="TextAppearance.ScreenMonitor.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
         <item name="fontFamily">sans-serif-medium</item>
     </style>
 
-    <style name="TextAppearance.ScreenMonitor.BodyLarge" parent="TextAppearance.MaterialComponents.Body1">
+    <style name="TextAppearance.ScreenMonitor.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:lineSpacingExtra">4dp</item>
     </style>
 
-    <style name="TextAppearance.ScreenMonitor.BodyMedium" parent="TextAppearance.MaterialComponents.Body2">
+    <style name="TextAppearance.ScreenMonitor.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
         <item name="android:lineSpacingExtra">2dp</item>
     </style>
 
-    <style name="TextAppearance.ScreenMonitor.LabelLarge" parent="TextAppearance.MaterialComponents.Button">
+    <style name="TextAppearance.ScreenMonitor.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
         <item name="fontFamily">sans-serif-medium</item>
     </style>
 </resources>
