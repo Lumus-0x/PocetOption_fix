@@ -134,11 +134,9 @@ class OcrProcessor {
         val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
         val bitmap = Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888)
 
-        // Use compressToByteArray with OutputStream (available since API 21)
-        val outputStream = java.io.ByteArrayOutputStream()
-        yuvImage.compressToByteArray(Rect(0, 0, image.width, image.height), outputStream)
-        val byteArray = outputStream.toByteArray()
-        return android.graphics.BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+        // Use compressToBitmap (available since API 1)
+        yuvImage.compressToBitmap(Rect(0, 0, image.width, image.height), bitmap)
+        return bitmap
     }
 
     /**

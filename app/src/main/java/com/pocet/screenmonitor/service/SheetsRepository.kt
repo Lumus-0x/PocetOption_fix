@@ -11,6 +11,10 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Collections
 
+// Type aliases for exception types (top-level to avoid nested type alias issues)
+typealias SheetsAuthException = SheetsRepository.SheetsException.AuthException
+typealias SheetsRateLimitException = SheetsRepository.SheetsException.RateLimitException
+
 class SheetsRepository(
     private val authManager: SheetsAuthManager,
     private val dateUtils: DateUtils
@@ -24,10 +28,6 @@ class SheetsRepository(
         private const val MAX_RETRIES = 3
         private const val BASE_DELAY_MS = 1000L
         private const val MAX_DELAY_MS = 30000L
-
-        // Type aliases for exception types
-        typealias AuthException = SheetsException.AuthException
-        typealias RateLimitException = SheetsException.RateLimitException
     }
 
     /**
@@ -59,8 +59,9 @@ class SheetsRepository(
             // 2. Find row matching today's date
             var targetRowIndex = -1
             for (i in dateValues.indices) {
-                val cellValue = dateValues.getOrNull(i)?.getOrNull(0)?.toString()?.trim() ?: ""
-                val normalizedDate = dateUtils.normalizeForComparison(cellValue)
+                val row = dateValues[i]
+                val cellValue = if (row != null && row.size > 0) row[0]?.toString()?.trim() else ""
+                val normalizedDate = dateUtils.normalizeForComparison(cellValue ?: "")
                 if (normalizedDate == today) {
                     targetRowIndex = i
                     break
@@ -89,22 +90,22 @@ class SheetsRepository(
                 .execute()
 
             Timber.d("Successfully wrote balance to Google Sheets")
-            Result.success(Unit)
+            return Result.success(Unit)
 
         } catch (e: GoogleJsonResponseException) {
             Timber.e(e, "Google API error: ${e.statusCode} - ${e.message}")
             when (e.statusCode) {
-                401, 403 -> Result.failure(SheetsException.AuthException("Authentication failed: ${e.message}", e))
-                429 -> Result.failure(SheetsException.RateLimitException("Rate limited: ${e.message}", e))
-                404 -> Result.failure(Exception("Spreadsheet not found: ${e.message}", e))
-                else -> Result.failure(Exception("Google API error: ${e.message}", e))
+                401, 403 -> return Result.failure(SheetsAuthException("Authentication failed: ${e.message}", e))
+                429 -> return Result.failure(SheetsRateLimitException("Rate limited: ${e.message}", e))
+                404 -> return Result.failure(Exception("Spreadsheet not found: ${e.message}", e))
+                else -> return Result.failure(Exception("Google API error: ${e.message}", e))
             }
         } catch (e: HttpResponseException) {
             Timber.e(e, "HTTP error: ${e.statusCode}")
-            Result.failure(Exception("HTTP error: ${e.message}", e))
+            return Result.failure(Exception("HTTP error: ${e.message}", e))
         } catch (e: Exception) {
             Timber.e(e, "Failed to write balance")
-            Result.failure(e)
+            return Result.failure(e)
         }
     }
 
@@ -125,8 +126,9 @@ class SheetsRepository(
 
                 var targetRowIndex = -1
                 for (i in dateValues.indices) {
-                    val cellValue = dateValues.getOrNull(i)?.getOrNull(0)?.toString()?.trim() ?: ""
-                    val normalizedDate = dateUtils.normalizeForComparison(cellValue)
+                    val row = dateValues[i]
+                    val cellValue = if (row != null && row.size > 0) row[0]?.toString()?.trim() else ""
+                    val normalizedDate = dateUtils.normalizeForComparison(cellValue ?: "")
                     if (normalizedDate == today) {
                         targetRowIndex = i
                         break
@@ -146,14 +148,15 @@ class SheetsRepository(
 
                 val amountValues = amountResponse.values
                 if (amountValues != null && amountValues.isNotEmpty()) {
-                    val value = amountValues.getOrNull(0)?.getOrNull(0)?.toString()
+                    val firstRow = amountValues[0]
+                    val value = if (firstRow != null && firstRow.size > 0) firstRow[0]?.toString() else null
                     return@retryWithBackoff Result.success(value?.toDoubleOrNull())
                 }
 
-                Result.success(null)
+                return@retryWithBackoff Result.success(null)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to read balance")
-                Result.failure(e)
+                return@retryWithBackoff Result.failure(e)
             }
         }
     }
@@ -165,10 +168,10 @@ class SheetsRepository(
         try {
             val service = authManager.getSheetsService()
             service.spreadsheets().get(SPREADSHEET_ID).execute()
-            Result.success(Unit)
+            return Result.success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "Connection test failed")
-            Result.failure(e)
+            return Result.failure(e)
         }
     }
 
@@ -180,7 +183,7 @@ class SheetsRepository(
         crossinline action: () -> Result<T>
     ): Result<T> {
         var attempt = 0
-        var lastException: Exception? = null
+        var lastException: Throwable? = null
 
         while (attempt <= maxRetries) {
             val result = action()
@@ -189,7 +192,7 @@ class SheetsRepository(
             lastException = result.exceptionOrNull()
 
             // Don't retry on auth errors - need re-auth
-            if (lastException is SheetsException.AuthException) {
+            if (lastException is SheetsAuthException) {
                 return result
             }
 

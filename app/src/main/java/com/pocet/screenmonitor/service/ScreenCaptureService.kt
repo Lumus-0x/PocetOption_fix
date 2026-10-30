@@ -338,8 +338,9 @@ class ScreenCaptureService : Service() {
                 description = "Captures screen for trading balance detection"
                 setShowBadge(false)
                 enableVibration(false)
-                sound = null
             }
+            channel.sound = null
+            channel.audioAttributes = null
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
         }
