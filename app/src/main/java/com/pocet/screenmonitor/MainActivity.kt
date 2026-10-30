@@ -357,7 +357,8 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, ScreenCaptureService::class.java).apply {
             action = ScreenCaptureService.ACTION_STOP_CAPTURE
         }
-        ContextCompat.startForegroundService(this, intent)
+        // Use startService to send command to already running foreground service
+        startService(intent)
         captureScheduler.setServiceRunning(false)
         updateServiceStatusUI()
         updateStatus(getString(R.string.status_stopped))
