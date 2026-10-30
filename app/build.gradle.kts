@@ -105,6 +105,7 @@ dependencies {
 
 kapt {
     correctErrorTypes = true
+    includeCompileClasspath = false
     javacOptions {
         option("-Xlint:unchecked")
     }
