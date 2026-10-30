@@ -28,6 +28,7 @@ jobs:
         ndk-version: r26c
         build-tools-version: 35.0.0
         accept-android-sdk-licenses: true
+        packages: platform-tools
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -62,6 +63,7 @@ jobs:
       with:
         api-level: 35
         accept-android-sdk-licenses: true
+        packages: platform-tools
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
