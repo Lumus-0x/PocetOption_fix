@@ -18,6 +18,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Singleton
 
 @Module
@@ -35,8 +36,18 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideSheetsAuthManager(
+        @ApplicationContext context: Context,
+        googleSignInOptions: GoogleSignInOptions
+    ): SheetsAuthManager {
+        val manager = SheetsAuthManager(context)
+        manager.initialize(googleSignInOptions)
+        return manager
+    }
+
+    @Provides
+    @Singleton
     fun provideSheetsService(
-        context: Context,
         authManager: SheetsAuthManager
     ): Sheets = authManager.getSheetsService()
 
