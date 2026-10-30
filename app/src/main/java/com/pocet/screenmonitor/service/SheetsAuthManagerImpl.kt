@@ -1,6 +1,7 @@
 package com.pocet.screenmonitor.service
 
 import android.accounts.Account
+import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
