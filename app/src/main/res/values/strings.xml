@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Screen Monitor Balance Sync</string>
+    <string name="app_short_name">ScreenMonitor</string>
+
+    <!-- Status messages -->
+    <string name="status_checking">Checking permissions...</string>
+    <string name="status_running">Running - Capturing screen</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_need_signin">Please sign in to Google</string>
+    <string name="status_need_permissions">Please grant required permissions</string>
+
+    <!-- Button texts -->
+    <string name="btn_start_capture">Start Capture</string>
+    <string name="btn_stop_capture">Stop Capture</string>
+    <string name="btn_sign_in">Sign In to Google</string>
+    <string name="btn_test_connection">Test Connection</string>
+    <string name="btn_request_permissions">Request All Permissions</string>
+
+    <!-- Descriptions -->
+    <string name="desc_how_it_works">1. Sign in to Google to access your Sheets\n2. Grant screen capture permission\n3. Disable battery optimization for this app\n4. Start capture - app runs in background\n5. When "qt real usd" or "qt demo usd" detected, balance is written to column E at today\'s date row (B6:B35)</string>
+
+    <string name="desc_permissions">Required: Battery optimization exemption, Exact alarms (Android 14+), Notifications (Android 13+)</string>
+    <string name="desc_screen_capture">Monitors screen for "qt real usd" or "qt demo usd" and writes balance to Google Sheets</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Screen Capture Service</string>
+    <string name="notification_channel_description">Captures screen for trading balance detection</string>
+    <string name="notification_title">Screen Monitor Active</string>
+    <string name="notification_text">Capturing screen for balance detection...</string>
+</resources>
