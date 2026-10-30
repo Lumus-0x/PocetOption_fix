@@ -106,7 +106,10 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Timber.e(e, "Fatal error in onCreate")
             // Show error to user instead of crashing
-            tvStatus?.text = "Ошибка инициализации: ${e.message}"
+            // Check if tvStatus is initialized (may not be if exception happened in setContentView or early initViews)
+            if (this::tvStatus.isInitialized) {
+                tvStatus.text = "Ошибка инициализации: ${e.message}"
+            }
             Toast.makeText(this, "Ошибка запуска: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
