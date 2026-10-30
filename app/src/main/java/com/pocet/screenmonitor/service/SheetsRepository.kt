@@ -57,17 +57,19 @@ class SheetsRepository(
             val dateValues: List<List<Any?>>? = dateResponse.values as? List<List<Any?>>
                 ?: return Result.failure(Exception("No date values found in sheet"))
 
-            Timber.d("Found ${dateValues.size} date rows")
+            Timber.d("Found ${dateValues?.size ?: 0} date rows")
 
             // 2. Find row matching today's date
             var targetRowIndex = -1
-            for (i in dateValues.indices) {
-                val row = dateValues[i]
-                val cellValue = row?.getOrNull(0)?.toString()?.trim() ?: ""
-                val normalizedDate = dateUtils.normalizeForComparison(cellValue)
-                if (normalizedDate == today) {
-                    targetRowIndex = i
-                    break
+            dateValues?.let { values ->
+                for (i in 0 until values.size) {
+                    val row = values.get(i)
+                    val cellValue = row?.getOrNull(0)?.toString()?.trim() ?: ""
+                    val normalizedDate = dateUtils.normalizeForComparison(cellValue)
+                    if (normalizedDate == today) {
+                        targetRowIndex = i
+                        return@let
+                    }
                 }
             }
 
@@ -135,13 +137,15 @@ class SheetsRepository(
                 ?: return Result.success(null)
 
             var targetRowIndex = -1
-            for (i in dateValues.indices) {
-                val row = dateValues[i]
-                val cellValue = row?.getOrNull(0)?.toString()?.trim() ?: ""
-                val normalizedDate = dateUtils.normalizeForComparison(cellValue)
-                if (normalizedDate == today) {
-                    targetRowIndex = i
-                    break
+            dateValues?.let { values ->
+                for (i in 0 until values.size) {
+                    val row = values.get(i)
+                    val cellValue = row?.getOrNull(0)?.toString()?.trim() ?: ""
+                    val normalizedDate = dateUtils.normalizeForComparison(cellValue)
+                    if (normalizedDate == today) {
+                        targetRowIndex = i
+                        return@let
+                    }
                 }
             }
 
@@ -159,7 +163,7 @@ class SheetsRepository(
             @Suppress("UNCHECKED_CAST")
             val amountValues: List<List<Any?>>? = amountResponse.values as? List<List<Any?>>
             if (amountValues != null && amountValues.isNotEmpty()) {
-                val firstRow = amountValues[0]
+                val firstRow = amountValues.get(0)
                 val value = firstRow?.getOrNull(0)?.toString()
                 return Result.success(value?.toDoubleOrNull())
             }

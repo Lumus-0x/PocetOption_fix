@@ -140,11 +140,10 @@ class OcrProcessor {
             val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
-            // Use compressToByteArray with pre-allocated byte array, then decode
+            // Use compressToBitmap (deprecated but works) to draw directly to bitmap
             val rect = Rect(0, 0, width, height)
-            val jpegData = ByteArray(width * height * 2) // Estimate JPEG size
-            val bytesWritten = yuvImage.compressToByteArray(rect, jpegData)
-            return android.graphics.BitmapFactory.decodeByteArray(jpegData, 0, bytesWritten)
+            yuvImage.compressToBitmap(rect, bitmap)
+            return bitmap
         }
 
         Timber.w("Unsupported image format: ${image.format}, planes: ${planes.size}")
