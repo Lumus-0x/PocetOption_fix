@@ -3,6 +3,10 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# Gradle distributions (should not be committed)
+gradle-*/
+gradle-*-bin.zip
+
 # Local configuration
 local.properties
 *.iml
