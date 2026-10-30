@@ -8,6 +8,7 @@ import android.media.Image
 import android.media.ImageReader
 import android.util.Log
 import android.util.Size
+import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
@@ -50,7 +51,8 @@ class OcrProcessor {
             val inputImage = InputImage.fromBitmap(scaledBitmap, 0)
 
             // Run text recognition
-            val mlKitText = textRecognizer.process(inputImage).await()
+            val task = textRecognizer.process(inputImage)
+            val mlKitText = Tasks.await(task)
 
             // Process with TextParser
             val parser = TextParser()
@@ -130,7 +132,7 @@ class OcrProcessor {
         val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
         val bitmap = Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888)
 
-        yuvImage.compressToBitmap(Rect(0, 0, image.width, image.height), bitmap)
+        yuvImage.compressToBitmap(Rect(0, 0, image.width, image.height), 100, bitmap)
 
         return bitmap
     }

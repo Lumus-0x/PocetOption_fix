@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -155,7 +156,7 @@ class ScreenCaptureService : Service() {
                     stopSelf()
                 }
             }
-        }, mainScope.coroutineContext[Looper]!!)
+        }, Looper.getMainLooper())
     }
 
     private fun setupImageReader() {
@@ -198,7 +199,7 @@ class ScreenCaptureService : Service() {
 
     private fun startCaptureLoop() {
         captureScope.launch {
-            while (isCapturing && !captureScope.isCancelled) {
+            while (isCapturing && captureScope.isActive) {
                 try {
                     captureAndProcessFrame()
                 } catch (e: Exception) {

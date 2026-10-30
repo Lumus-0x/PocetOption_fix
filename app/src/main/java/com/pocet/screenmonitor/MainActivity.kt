@@ -28,15 +28,23 @@ import com.pocet.screenmonitor.service.SheetsAuthManager
 import com.pocet.screenmonitor.service.SheetsRepository
 import com.pocet.screenmonitor.util.BatteryOptimizationUtils
 import com.pocet.screenmonitor.util.PermissionUtils
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var authManager: SheetsAuthManager
-    private lateinit var captureScheduler: CaptureScheduler
-    private lateinit var batteryUtils: BatteryOptimizationUtils
+    @Inject
+    lateinit var authManager: SheetsAuthManager
+
+    @Inject
+    lateinit var captureScheduler: CaptureScheduler
+
+    @Inject
+    lateinit var batteryUtils: BatteryOptimizationUtils
 
     // UI Elements
     private lateinit var tvStatus: TextView
@@ -117,10 +125,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initManagers() {
-        authManager = SheetsAuthManager(this)
-        captureScheduler = CaptureScheduler(this)
-        batteryUtils = BatteryOptimizationUtils(this)
-
+        // Auth manager is injected via Hilt
         // Initialize auth manager with sign-in options
         val signInOptions = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(
             com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN

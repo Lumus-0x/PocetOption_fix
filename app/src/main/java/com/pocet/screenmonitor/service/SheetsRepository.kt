@@ -55,7 +55,7 @@ class SheetsRepository(
             // 2. Find row matching today's date
             var targetRowIndex = -1
             for (i in dateValues.indices) {
-                val cellValue = dateValues[i].firstOrNull()?.toString()?.trim() ?: ""
+                val cellValue = dateValues[i].getOrNull(0)?.toString()?.trim() ?: ""
                 val normalizedDate = dateUtils.normalizeForComparison(cellValue)
                 if (normalizedDate == today) {
                     targetRowIndex = i
@@ -121,7 +121,7 @@ class SheetsRepository(
 
                 var targetRowIndex = -1
                 for (i in dateValues.indices) {
-                    val cellValue = dateValues[i].firstOrNull()?.toString()?.trim() ?: ""
+                    val cellValue = dateValues[i].getOrNull(0)?.toString()?.trim() ?: ""
                     val normalizedDate = dateUtils.normalizeForComparison(cellValue)
                     if (normalizedDate == today) {
                         targetRowIndex = i
@@ -142,8 +142,8 @@ class SheetsRepository(
 
                 val amountValues = amountResponse.values
                 if (amountValues != null && amountValues.isNotEmpty()) {
-                    val value = amountValues[0][0].toString()
-                    return@retryWithBackoff Result.success(value.toDoubleOrNull())
+                    val value = amountValues[0].getOrNull(0)?.toString()
+                    return@retryWithBackoff Result.success(value?.toDoubleOrNull())
                 }
 
                 Result.success(null)
@@ -207,18 +207,17 @@ class SheetsRepository(
 
     sealed class SheetsException(message: String, cause: Throwable? = null) : Exception(message, cause) {
         data class AuthException(
-            val msg: String,
-            val cause: Throwable? = null
-        ) : SheetsException(msg, cause)
+            override val message: String,
+            override val cause: Throwable? = null
+        ) : SheetsException(message, cause)
 
         data class RateLimitException(
-            val msg: String,
-            val cause: Throwable? = null
-        ) : SheetsException(msg, cause)
+            override val message: String,
+            override val cause: Throwable? = null
+        ) : SheetsException(message, cause)
     }
 
-    companion object {
-        typealias AuthException = SheetsException.AuthException
-        typealias RateLimitException = SheetsException.RateLimitException
-    }
+    // Type aliases at top level instead of nested companion object
+    typealias AuthException = SheetsException.AuthException
+    typealias RateLimitException = SheetsException.RateLimitException
 }

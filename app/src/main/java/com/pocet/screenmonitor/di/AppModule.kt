@@ -9,7 +9,6 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.pocet.screenmonitor.service.OcrProcessor
-import com.pocet.screenmonitor.service.SheetsAuthManager
 import com.pocet.screenmonitor.service.SheetsRepository
 import com.pocet.screenmonitor.service.TextParser
 import com.pocet.screenmonitor.util.BatteryOptimizationUtils
@@ -36,12 +35,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSheetsService(
-        authManager: SheetsAuthManager
-    ): Sheets = authManager.getSheetsService()
-
-    @Provides
-    @Singleton
     fun provideOcrProcessor(): OcrProcessor {
         return OcrProcessor()
     }
@@ -60,7 +53,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideBatteryOptimizationUtils(context: Context): BatteryOptimizationUtils {
+    fun provideBatteryOptimizationUtils(@ApplicationContext context: Context): BatteryOptimizationUtils {
         return BatteryOptimizationUtils(context)
     }
 }

@@ -22,6 +22,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Collections
@@ -74,11 +75,9 @@ class SheetsAuthManagerImpl @Inject constructor(
             // Try to restore from saved account name
             val savedAccountName = encryptedPrefs.getString(PREF_KEY_ACCOUNT_NAME, null)
             if (savedAccountName != null) {
-                account = GoogleSignIn.getSignedInAccountFromIntent(
-                    // We need to trigger sign-in silently
-                    com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, signInOptions!!)
-                        .signInIntent
-                ).await()
+                // Need to trigger sign-in to get the account
+                val client = GoogleSignIn.getClient(context, signInOptions!!)
+                account = Tasks.await(client.silentSignIn())
             }
         }
 
@@ -88,8 +87,8 @@ class SheetsAuthManagerImpl @Inject constructor(
         }
 
         // Save account name for future silent sign-in attempts
-        if (account != null) {
-            encryptedPrefs.putString(PREF_KEY_ACCOUNT_NAME, account.account.name)
+        account?.let {
+            encryptedPrefs.putString(PREF_KEY_ACCOUNT_NAME, it.account.name)
         }
 
         return@withContext account!!

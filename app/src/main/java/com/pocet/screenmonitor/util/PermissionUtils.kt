@@ -12,7 +12,7 @@ object PermissionUtils {
     // MediaProjection is handled via system intent, not runtime permission
     // These are the runtime permissions we need to request
 
-    private const val REQUEST_CODE_PERMISSIONS = 2000
+    const val REQUEST_CODE_PERMISSIONS = 2000
 
     val REQUIRED_PERMISSIONS = arrayOf(
         android.Manifest.permission.INTERNET,

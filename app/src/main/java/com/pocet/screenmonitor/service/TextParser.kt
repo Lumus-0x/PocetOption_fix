@@ -2,6 +2,7 @@ package com.pocet.screenmonitor.service
 
 import com.google.mlkit.vision.text.Text
 import com.pocet.screenmonitor.model.BalanceResult
+import kotlin.math.min
 import timber.log.Timber
 
 class TextParser {
@@ -222,7 +223,7 @@ class TextParser {
             confidence += 0.1f
         }
 
-        return minOf(confidence, 1.0f)
+        return min(confidence, 1.0f)
     }
 
     /**
