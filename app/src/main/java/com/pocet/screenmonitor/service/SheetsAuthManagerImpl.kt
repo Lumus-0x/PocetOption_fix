@@ -150,7 +150,7 @@ class SheetsAuthManagerImpl @Inject constructor(
             Timber.e(e, errorMsg)
             Result.failure(Exception(errorMsg))
         } catch (e: Exception) {
-            val errorMsg = "Unexpected error during sign-in: ${e.message ?: e.class.simpleName}"
+            val errorMsg = "Unexpected error during sign-in: ${e.message ?: e::class.simpleName}"
             Timber.e(e, errorMsg)
             Result.failure(Exception(errorMsg))
         }
