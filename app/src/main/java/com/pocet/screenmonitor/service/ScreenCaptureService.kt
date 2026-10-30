@@ -158,7 +158,7 @@ class ScreenCaptureService : Service() {
                     stopSelf()
                 }
             }
-        }, Looper.getMainLooper())
+        }, Handler(Looper.getMainLooper()))
     }
 
     private fun setupImageReader() {

@@ -23,7 +23,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Collections
@@ -78,7 +77,7 @@ class SheetsAuthManagerImpl @Inject constructor(
             if (savedAccountName != null) {
                 // Need to trigger sign-in to get the account
                 val client = GoogleSignIn.getClient(context, signInOptions!!)
-                account = client.silentSignIn().await()
+                account = Tasks.await(client.silentSignIn())
             }
         }
 
@@ -121,7 +120,7 @@ class SheetsAuthManagerImpl @Inject constructor(
 
         return@withContext try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(intent)
-            val account = task.await()
+            val account = Tasks.await(task)
             encryptedPrefs.putString(PREF_KEY_ACCOUNT_NAME, account.account?.name ?: "")
             account
         } catch (e: ApiException) {

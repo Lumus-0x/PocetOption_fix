@@ -17,6 +17,7 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.pocet.screenmonitor.model.BalanceResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -24,7 +25,8 @@ import timber.log.Timber
 class OcrProcessor {
 
     private val textRecognizer: TextRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-    private val processingScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val processingJob = SupervisorJob()
+    private val processingScope = CoroutineScope(processingJob + Dispatchers.IO)
     private var isProcessing = false
 
     /**
@@ -132,7 +134,7 @@ class OcrProcessor {
         val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
         val bitmap = Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888)
 
-        // compressToBitmap is deprecated/not available, use compressToByteArray then decode
+        // Use compressToByteArray with OutputStream (available since API 21)
         val outputStream = java.io.ByteArrayOutputStream()
         yuvImage.compressToByteArray(Rect(0, 0, image.width, image.height), outputStream)
         val byteArray = outputStream.toByteArray()
@@ -163,7 +165,7 @@ class OcrProcessor {
     }
 
     fun close() {
-        processingScope.cancel()
+        processingJob.cancel()
         textRecognizer.close()
     }
 

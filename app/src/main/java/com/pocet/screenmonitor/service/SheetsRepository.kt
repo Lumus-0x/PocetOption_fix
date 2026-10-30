@@ -24,6 +24,10 @@ class SheetsRepository(
         private const val MAX_RETRIES = 3
         private const val BASE_DELAY_MS = 1000L
         private const val MAX_DELAY_MS = 30000L
+
+        // Type aliases for exception types
+        typealias AuthException = SheetsException.AuthException
+        typealias RateLimitException = SheetsException.RateLimitException
     }
 
     /**
@@ -55,7 +59,7 @@ class SheetsRepository(
             // 2. Find row matching today's date
             var targetRowIndex = -1
             for (i in dateValues.indices) {
-                val cellValue = dateValues[i].getOrNull(0)?.toString()?.trim() ?: ""
+                val cellValue = dateValues.getOrNull(i)?.getOrNull(0)?.toString()?.trim() ?: ""
                 val normalizedDate = dateUtils.normalizeForComparison(cellValue)
                 if (normalizedDate == today) {
                     targetRowIndex = i
@@ -76,7 +80,7 @@ class SheetsRepository(
 
             // 3. Write amount to column E
             val valueRange = ValueRange().setValues(
-                Collections.singletonList(Collections.singletonList(result.amount))
+                Collections.singletonList(Collections.singletonList(result.amount as Any))
             )
 
             service.spreadsheets().values()
@@ -90,8 +94,8 @@ class SheetsRepository(
         } catch (e: GoogleJsonResponseException) {
             Timber.e(e, "Google API error: ${e.statusCode} - ${e.message}")
             when (e.statusCode) {
-                401, 403 -> Result.failure(AuthException("Authentication failed: ${e.message}", e))
-                429 -> Result.failure(RateLimitException("Rate limited: ${e.message}", e))
+                401, 403 -> Result.failure(SheetsException.AuthException("Authentication failed: ${e.message}", e))
+                429 -> Result.failure(SheetsException.RateLimitException("Rate limited: ${e.message}", e))
                 404 -> Result.failure(Exception("Spreadsheet not found: ${e.message}", e))
                 else -> Result.failure(Exception("Google API error: ${e.message}", e))
             }
@@ -121,7 +125,7 @@ class SheetsRepository(
 
                 var targetRowIndex = -1
                 for (i in dateValues.indices) {
-                    val cellValue = dateValues[i].getOrNull(0)?.toString()?.trim() ?: ""
+                    val cellValue = dateValues.getOrNull(i)?.getOrNull(0)?.toString()?.trim() ?: ""
                     val normalizedDate = dateUtils.normalizeForComparison(cellValue)
                     if (normalizedDate == today) {
                         targetRowIndex = i
@@ -142,7 +146,7 @@ class SheetsRepository(
 
                 val amountValues = amountResponse.values
                 if (amountValues != null && amountValues.isNotEmpty()) {
-                    val value = amountValues[0].getOrNull(0)?.toString()
+                    val value = amountValues.getOrNull(0)?.getOrNull(0)?.toString()
                     return@retryWithBackoff Result.success(value?.toDoubleOrNull())
                 }
 
@@ -185,7 +189,7 @@ class SheetsRepository(
             lastException = result.exceptionOrNull()
 
             // Don't retry on auth errors - need re-auth
-            if (lastException is AuthException) {
+            if (lastException is SheetsException.AuthException) {
                 return result
             }
 
@@ -216,8 +220,4 @@ class SheetsRepository(
             override val cause: Throwable? = null
         ) : SheetsException(message, cause)
     }
-
-    // Type aliases at top level instead of nested companion object
-    typealias AuthException = SheetsException.AuthException
-    typealias RateLimitException = SheetsException.RateLimitException
 }

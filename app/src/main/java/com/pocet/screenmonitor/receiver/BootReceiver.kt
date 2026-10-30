@@ -14,6 +14,17 @@ class BootReceiver : BroadcastReceiver() {
         // Some devices send this action instead of BOOT_COMPLETED
         private const val ACTION_QUICKBOOT_POWERON = "android.intent.action.QUICKBOOT_POWERON"
         private const val ACTION_HTC_QUICKBOOT = "com.htc.intent.action.QUICKBOOT_POWERON"
+
+        fun scheduleExactAlarmOnBoot(context: Context) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                if (alarmManager.canScheduleExactAlarms()) {
+                    // Reschedule any exact alarms
+                    val scheduler = CaptureScheduler(context)
+                    scheduler.scheduleExactCapture()
+                }
+            }
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -43,19 +54,6 @@ class BootReceiver : BroadcastReceiver() {
             Timber.d("Service was running before boot, will need user to restart capture")
             // We can't automatically restart MediaProjection without user interaction
             // The user will need to open the app and grant permission again
-        }
-    }
-
-    companion object {
-        fun scheduleExactAlarmOnBoot(context: Context) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                if (alarmManager.canScheduleExactAlarms()) {
-                    // Reschedule any exact alarms
-                    val scheduler = CaptureScheduler(context)
-                    scheduler.scheduleExactCapture()
-                }
-            }
         }
     }
 }
