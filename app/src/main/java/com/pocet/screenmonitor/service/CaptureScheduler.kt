@@ -50,7 +50,7 @@ class CaptureScheduler(private val context: Context) {
                 .setRequiresBatteryNotLow(true)
                 .build()
 
-            val captureWork = PeriodicWorkRequest.Builder<CaptureWorker>(CAPTURE_INTERVAL_MINUTES, TimeUnit.MINUTES)
+            val captureWork = PeriodicWorkRequest.Builder(CaptureWorker::class.java, CAPTURE_INTERVAL_MINUTES, TimeUnit.MINUTES)
                 .setConstraints(constraints)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.MINUTES)
                 .addTag(WORK_TAG)
@@ -115,7 +115,7 @@ class CaptureScheduler(private val context: Context) {
      */
     fun triggerImmediateCapture() {
         scheduleScope.launch {
-            val immediateWork = OneTimeWorkRequest.Builder<CaptureWorker>()
+            val immediateWork = OneTimeWorkRequest.Builder(CaptureWorker::class.java)
                 .addTag(WORK_TAG)
                 .build()
             workManager.enqueue(immediateWork)

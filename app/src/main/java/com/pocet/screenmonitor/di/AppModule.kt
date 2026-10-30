@@ -9,6 +9,7 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.pocet.screenmonitor.service.OcrProcessor
+import com.pocet.screenmonitor.service.SheetsAuthManager
 import com.pocet.screenmonitor.service.SheetsRepository
 import com.pocet.screenmonitor.service.TextParser
 import com.pocet.screenmonitor.util.BatteryOptimizationUtils
@@ -35,6 +36,18 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideSheetsService(
+        @ApplicationContext context: Context,
+        authManager: SheetsAuthManager
+    ): Sheets {
+        // Get the authenticated Sheets service - using runBlocking since this is initialization
+        return kotlinx.coroutines.runBlocking {
+            authManager.getSheetsService()
+        }
+    }
+
+    @Provides
+    @Singleton
     fun provideOcrProcessor(): OcrProcessor {
         return OcrProcessor()
     }
@@ -55,5 +68,14 @@ object AppModule {
     @Singleton
     fun provideBatteryOptimizationUtils(@ApplicationContext context: Context): BatteryOptimizationUtils {
         return BatteryOptimizationUtils(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSheetsRepository(
+        authManager: SheetsAuthManager,
+        dateUtils: DateUtils
+    ): SheetsRepository {
+        return SheetsRepository(authManager, dateUtils)
     }
 }

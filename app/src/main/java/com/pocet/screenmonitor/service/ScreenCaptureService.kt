@@ -58,8 +58,10 @@ class ScreenCaptureService : Service() {
     private val ocrProcessor = OcrProcessor()
     private val textParser = TextParser()
     private var sheetsRepository: SheetsRepository? = null
-    private val captureScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val captureJob = SupervisorJob()
+    private val mainJob = SupervisorJob()
+    private val captureScope = CoroutineScope(captureJob + Dispatchers.IO)
+    private val mainScope = CoroutineScope(mainJob + Dispatchers.Main)
     private var isCapturing = false
     private var lastSuccessfulWrite: Long = 0
     private val MIN_WRITE_INTERVAL_MS = 60000L // Minimum 1 minute between writes
@@ -75,7 +77,7 @@ class ScreenCaptureService : Service() {
 
         // Load target account type preference
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val accountTypeStr = prefs.getString(PREF_KEY_ACCOUNT_TYPE, "REAL")
+        val accountTypeStr = prefs.getString(PREF_KEY_ACCOUNT_TYPE, "REAL") ?: "REAL"
         targetAccountType = BalanceResult.AccountType.valueOf(accountTypeStr)
         Timber.d("Target account type: $targetAccountType")
 
@@ -275,8 +277,8 @@ class ScreenCaptureService : Service() {
         Timber.d("Stopping screen capture")
         isCapturing = false
 
-        captureScope.cancel()
-        mainScope.cancel()
+        captureJob.cancel()
+        mainJob.cancel()
 
         virtualDisplay?.release()
         virtualDisplay = null

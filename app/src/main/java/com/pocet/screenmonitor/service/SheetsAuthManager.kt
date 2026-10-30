@@ -1,11 +1,9 @@
 package com.pocet.screenmonitor.service
 
-import android.content.Context
 import android.content.Intent
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.api.services.sheets.v4.Sheets
-import kotlinx.coroutines.Continuation
 
 interface SheetsAuthManager {
 

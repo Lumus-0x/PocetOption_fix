@@ -10,13 +10,19 @@ import timber.log.Timber
 
 class BootReceiver : BroadcastReceiver() {
 
+    companion object {
+        // Some devices send this action instead of BOOT_COMPLETED
+        private const val ACTION_QUICKBOOT_POWERON = "android.intent.action.QUICKBOOT_POWERON"
+        private const val ACTION_HTC_QUICKBOOT = "com.htc.intent.action.QUICKBOOT_POWERON"
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         Timber.d("BootReceiver: ${intent.action}")
 
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED,
-            "android.intent.action.QUICKBOOT_POWERON",
-            "com.htc.intent.action.QUICKBOOT_POWERON" -> {
+            ACTION_QUICKBOOT_POWERON,
+            ACTION_HTC_QUICKBOOT -> {
                 // Reschedule periodic work
                 val scheduler = CaptureScheduler(context)
                 scheduler.rescheduleOnBoot()
