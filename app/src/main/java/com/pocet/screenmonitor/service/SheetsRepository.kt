@@ -206,10 +206,19 @@ class SheetsRepository(
     }
 
     sealed class SheetsException(message: String, cause: Throwable? = null) : Exception(message, cause) {
-        data class AuthException(msg: String, cause: Throwable? = null) : SheetsException(msg, cause)
-        data class RateLimitException(msg: String, cause: Throwable? = null) : SheetsException(msg, cause)
+        data class AuthException(
+            val msg: String,
+            val cause: Throwable? = null
+        ) : SheetsException(msg, cause)
+
+        data class RateLimitException(
+            val msg: String,
+            val cause: Throwable? = null
+        ) : SheetsException(msg, cause)
     }
 
-    typealias AuthException = SheetsException.AuthException
-    typealias RateLimitException = SheetsException.RateLimitException
+    companion object {
+        typealias AuthException = SheetsException.AuthException
+        typealias RateLimitException = SheetsException.RateLimitException
+    }
 }
