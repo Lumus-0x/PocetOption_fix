@@ -9,7 +9,17 @@ interface SheetsAuthManager {
 
     fun initialize(signInOptions: GoogleSignInOptions)
 
-    suspend fun getSheetsService(): Sheets
+    /**
+     * Get authenticated Sheets service.
+     * Returns null if user is not signed in and interactive sign-in is required.
+     */
+    suspend fun getSheetsService(): Sheets?
+
+    /**
+     * Get existing signed-in account or failure if interactive sign-in is required.
+     * Does not throw - returns Result for caller to handle.
+     */
+    suspend fun getAccountOrNull(): Result<GoogleSignInAccount>
 
     fun getSignInIntent(): Intent?
 

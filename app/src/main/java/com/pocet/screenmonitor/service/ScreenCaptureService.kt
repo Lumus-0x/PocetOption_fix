@@ -84,7 +84,7 @@ class ScreenCaptureService : Service() {
         Timber.d("Target account type: $targetAccountType")
 
         createNotificationChannel()
-        initSheetsRepository()
+        // SheetsRepository will be initialized lazily on first use
     }
 
     private fun initSheetsRepository() {
@@ -176,13 +176,8 @@ class ScreenCaptureService : Service() {
                 PixelFormat.RGBA_8888,
                 2 // Max images
             ).apply {
-                setOnImageAvailableListener({ reader ->
-                    if (isCapturing) {
-                        captureScope.launch {
-                            processFrame(reader)
-                        }
-                    }
-                }, Handler(Looper.getMainLooper()))
+                // We don't use OnImageAvailableListener - instead we use periodic capture in startCaptureLoop()
+                // This avoids race conditions and double-processing
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to create ImageReader")
@@ -254,25 +249,6 @@ class ScreenCaptureService : Service() {
         }
     }
 
-    private suspend fun processFrame(reader: ImageReader) {
-        val image = reader.acquireLatestImage() ?: return
-
-        try {
-            val result = ocrProcessor.processImage(image, targetAccountType)
-
-            if (result.isValid()) {
-                Timber.d("Valid balance detected: ${result.accountType} = ${result.amount}")
-
-                val now = System.currentTimeMillis()
-                if (now - lastSuccessfulWrite >= MIN_WRITE_INTERVAL_MS) {
-                    writeToSheets(result)
-                }
-            }
-        } finally {
-            image.close()
-        }
-    }
-
     private fun writeToSheets(result: BalanceResult) {
         val repo = getSheetsRepository() ?: return
 
@@ -298,32 +274,42 @@ class ScreenCaptureService : Service() {
         mainJob.cancel()
 
         // Release virtual display
-        try {
-            virtualDisplay?.release()
-        } catch (e: Exception) {
-            Timber.e(e, "Error releasing virtual display")
+        virtualDisplay?.let {
+            try {
+                it.release()
+                Timber.d("Virtual display released")
+            } catch (e: Exception) {
+                Timber.e(e, "Error releasing virtual display")
+            }
         }
         virtualDisplay = null
 
         // Close image reader
-        try {
-            imageReader?.close()
-        } catch (e: Exception) {
-            Timber.e(e, "Error closing image reader")
+        imageReader?.let {
+            try {
+                it.close()
+                Timber.d("Image reader closed")
+            } catch (e: Exception) {
+                Timber.e(e, "Error closing image reader")
+            }
         }
         imageReader = null
 
         // Stop media projection
-        try {
-            mediaProjection?.stop()
-        } catch (e: Exception) {
-            Timber.e(e, "Error stopping media projection")
+        mediaProjection?.let {
+            try {
+                it.stop()
+                Timber.d("Media projection stopped")
+            } catch (e: Exception) {
+                Timber.e(e, "Error stopping media projection")
+            }
         }
         mediaProjection = null
 
         // Close OCR processor
         try {
             ocrProcessor.close()
+            Timber.d("OCR processor closed")
         } catch (e: Exception) {
             Timber.e(e, "Error closing OCR processor")
         }
@@ -331,6 +317,7 @@ class ScreenCaptureService : Service() {
         // Stop foreground service
         try {
             stopForeground(true)
+            Timber.d("Foreground service stopped")
         } catch (e: Exception) {
             Timber.e(e, "Error stopping foreground service")
         }

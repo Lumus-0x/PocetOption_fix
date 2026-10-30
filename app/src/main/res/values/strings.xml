@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">Screen Monitor Balance Sync</string>
-    <string name="app_short_name">ScreenMonitor</string>
+    <string name="app_name">Pocket Option Helper</string>
+    <string name="app_short_name">PocketOptionHelper</string>
 
     <!-- Status messages -->
     <string name="status_checking">Проверка разрешений…</string>
@@ -29,7 +29,7 @@
     <string name="desc_screen_capture">Отслеживает "qt real usd" или "qt demo usd" на экране и записывает баланс в Google Таблицы</string>
 
     <!-- Section titles -->
-    <string name="section_title">Screen Monitor Balance Sync</string>
+    <string name="section_title">Pocket Option Helper</string>
     <string name="section_status">Статус</string>
     <string name="section_google_sheets">Доступ к Google Таблицам</string>
     <string name="section_account_type">Тип аккаунта для мониторинга</string>
@@ -59,10 +59,10 @@
     <string name="toast_sign_in_first">Сначала выполните вход в Google</string>
 
     <!-- Notifications -->
-    <string name="notification_channel_name">Служба захвата экрана</string>
-    <string name="notification_channel_description">Захват экрана для определения баланса</string>
-    <string name="notification_title">Screen Monitor активен</string>
-    <string name="notification_text">Захват экрана для определения баланса…</string>
+    <string name="notification_channel_name">Pocket Option Helper</string>
+    <string name="notification_channel_description">Мониторинг баланса Pocket Option</string>
+    <string name="notification_title">Pocket Option Helper активен</string>
+    <string name="notification_text">Мониторинг баланса в фоне…</string>
 
     <!-- Menu items -->
     <string name="action_settings">Настройки</string>

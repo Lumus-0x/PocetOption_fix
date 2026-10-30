@@ -3,10 +3,6 @@ package com.pocet.screenmonitor.di
 import android.content.Context
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
-import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.gson.GsonFactory
-import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.pocet.screenmonitor.service.CaptureScheduler
 import com.pocet.screenmonitor.service.OcrProcessor
@@ -33,18 +29,6 @@ object AppModule {
             .requestScopes(com.google.android.gms.common.api.Scope(SheetsScopes.SPREADSHEETS))
             .requestEmail()
             .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideSheetsService(
-        @ApplicationContext context: Context,
-        authManager: SheetsAuthManager
-    ): Sheets {
-        // Get the authenticated Sheets service - using runBlocking since this is initialization
-        return kotlinx.coroutines.runBlocking {
-            authManager.getSheetsService()
-        }
     }
 
     @Provides

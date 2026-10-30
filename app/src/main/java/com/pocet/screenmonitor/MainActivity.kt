@@ -7,8 +7,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.util.Log
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -97,12 +95,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        // Wrap in try-catch to prevent crash on startup
+        try {
+            setContentView(R.layout.activity_main)
 
-        initViews()
-        initManagers()
-        setupClickListeners()
-        checkPermissionsAndSetup()
+            initViews()
+            initManagers()
+            setupClickListeners()
+            checkPermissionsAndSetup()
+        } catch (e: Exception) {
+            Timber.e(e, "Fatal error in onCreate")
+            // Show error to user instead of crashing
+            tvStatus?.text = "Ошибка инициализации: ${e.message}"
+            Toast.makeText(this, "Ошибка запуска: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun initViews() {
@@ -127,15 +133,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initManagers() {
-        // Auth manager is injected via Hilt
-        // Initialize auth manager with sign-in options
-        val signInOptions = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(
-            com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN
-        )
-            .requestScopes(com.google.android.gms.common.api.Scope(com.google.api.services.sheets.v4.SheetsScopes.SPREADSHEETS))
-            .requestEmail()
-            .build()
-        authManager.initialize(signInOptions)
+        // Auth manager is already initialized via Hilt with correct GoogleSignInOptions
+        // No need to re-initialize - just verify it's ready
+        Timber.d("Auth manager initialized via Hilt: ${authManager.isSignedIn()}")
     }
 
     private fun setupClickListeners() {
@@ -193,22 +193,23 @@ class MainActivity : AppCompatActivity() {
     private fun requestAllPermissions() {
         PermissionUtils.requestAllPermissions(this)
 
-        // Also request special permissions
+        // Also request special permissions via Settings intents
         if (!batteryUtils.isIgnoringBatteryOptimizations()) {
-            batteryUtils.requestBatteryOptimizationExemption(this)
+            val intent = batteryUtils.getRequestBatteryOptimizationExemptionIntent()
+            if (intent != null) {
+                batteryOptimizationLauncher.launch(intent)
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !batteryUtils.canScheduleExactAlarms()) {
-            batteryUtils.requestExactAlarmPermission(this)
+            val intent = batteryUtils.getRequestExactAlarmPermissionIntent()
+            if (intent != null) {
+                exactAlarmLauncher.launch(intent)
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !batteryUtils.hasNotificationPermission()) {
             notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-        }
-
-        // Check exact alarm permission result
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            exactAlarmLauncher.launch(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
         }
     }
 
@@ -232,13 +233,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkSignInStatus() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val isSignedIn = authManager.isSignedIn()
+            // Use new getAccountOrNull to check if we have a valid account without throwing
+            val accountResult = authManager.getAccountOrNull()
             runOnUiThread {
-                if (isSignedIn) {
+                if (accountResult.isSuccess) {
+                    val account = accountResult.getOrNull()
                     btnSignIn.text = getString(R.string.btn_signed_in)
                     btnSignIn.isEnabled = false
-                    // Note: We don't have email here, just show signed in status
-                    updateStatus(getString(R.string.status_signed_in, ""))
+                    if (account != null) {
+                        updateStatus(getString(R.string.status_signed_in, account.email))
+                    } else {
+                        updateStatus(getString(R.string.status_signed_in, ""))
+                    }
                 } else {
                     btnSignIn.text = getString(R.string.btn_sign_in)
                     btnSignIn.isEnabled = true
@@ -324,8 +330,14 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(this@MainActivity, getString(R.string.toast_connection_success), Toast.LENGTH_SHORT).show()
                     } else {
                         val errorMsg = result.exceptionOrNull()?.message ?: "Unknown error"
-                        updateStatus(getString(R.string.toast_connection_failed, errorMsg))
-                        Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, errorMsg), Toast.LENGTH_LONG).show()
+                        // Check if it's an auth error
+                        if (result.exceptionOrNull() is SheetsRepository.SheetsException.AuthException) {
+                            updateStatus(getString(R.string.status_need_signin))
+                            Toast.makeText(this@MainActivity, "Требуется повторный вход в Google", Toast.LENGTH_LONG).show()
+                        } else {
+                            updateStatus(getString(R.string.toast_connection_failed, errorMsg))
+                            Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, errorMsg), Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             } else {

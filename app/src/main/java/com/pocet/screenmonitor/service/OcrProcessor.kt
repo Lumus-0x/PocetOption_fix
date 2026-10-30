@@ -24,18 +24,27 @@ import timber.log.Timber
 
 class OcrProcessor {
 
-    private val textRecognizer: TextRecognizer by lazy {
-        try {
-            TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to initialize TextRecognizer, OCR will not work")
-            // Return a dummy recognizer that always fails gracefully
-            throw RuntimeException("TextRecognizer initialization failed", e)
-        }
-    }
+    // Nullable TextRecognizer - initialization failure won't crash the app
+    private var textRecognizer: TextRecognizer? = null
+    private var initError: String? = null
     private val processingJob = SupervisorJob()
     private val processingScope = CoroutineScope(processingJob + Dispatchers.IO)
     private var isProcessing = false
+
+    init {
+        initializeTextRecognizer()
+    }
+
+    private fun initializeTextRecognizer() {
+        try {
+            textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            Timber.d("TextRecognizer initialized successfully")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to initialize TextRecognizer, OCR will not work")
+            initError = "TextRecognizer initialization failed: ${e.message}"
+            textRecognizer = null
+        }
+    }
 
     /**
      * Process an ImageProxy from ImageReader and return BalanceResult
@@ -47,11 +56,12 @@ class OcrProcessor {
         }
 
         // Check if textRecognizer is initialized
-        val recognizer = try {
-            textRecognizer
-        } catch (e: Exception) {
-            Timber.e(e, "TextRecognizer not available")
-            return@withContext BalanceResult.unknown("OCR not initialized")
+        val recognizer = textRecognizer
+        if (recognizer == null) {
+            val error = initError ?: "OCR not initialized"
+            Timber.e("TextRecognizer not available: $error")
+            image.close()
+            return@withContext BalanceResult.unknown(error)
         }
 
         isProcessing = true
@@ -153,7 +163,16 @@ class OcrProcessor {
 
     fun close() {
         processingJob.cancel()
-        textRecognizer.close()
+        textRecognizer?.close()
+        textRecognizer = null
+    }
+
+    fun isInitialized(): Boolean {
+        return textRecognizer != null
+    }
+
+    fun getInitError(): String? {
+        return initError
     }
 
     companion object {

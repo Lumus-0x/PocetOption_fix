@@ -1,6 +1,6 @@
-# Screen Monitor Balance Sync
+# Pocket Option Helper
 
-Android 16 app that runs in background, monitors screen for trading account balances ("qt real usd" or "qt demo usd"), and automatically writes the balance to Google Sheets at the row matching today's date.
+Android 16 app that runs in background, monitors screen for Pocket Option trading account balances ("qt real usd" or "qt demo usd"), and automatically writes the balance to Google Sheets at the row matching today's date.
 
 ## Features
 
@@ -41,7 +41,9 @@ app_pocet/
 │   │   │   ├── PocetApplication.kt          # Hilt Application
 │   │   │   ├── MainActivity.kt              # Main UI & permission handling
 │   │   │   ├── di/
-│   │   │   │   └── AppModule.kt             # Hilt DI module
+│   │   │   │   ├── AppModule.kt             # Hilt DI module
+│   │   │   │   ├── AuthModule.kt            # Auth DI bindings
+│   │   │   │   └── ServiceEntryPoint.kt     # EntryPoint for Services
 │   │   │   ├── model/
 │   │   │   │   └── BalanceResult.kt         # Data model for parsed balance
 │   │   │   ├── service/
@@ -50,6 +52,7 @@ app_pocet/
 │   │   │   │   ├── TextParser.kt            # Balance extraction logic
 │   │   │   │   ├── SheetsRepository.kt      # Google Sheets API client
 │   │   │   │   ├── SheetsAuthManager.kt     # OAuth 2.0 authentication
+│   │   │   │   ├── SheetsAuthManagerImpl.kt # Google Sign-In implementation
 │   │   │   │   └── CaptureScheduler.kt      # WorkManager scheduling
 │   │   │   ├── receiver/
 │   │   │   │   └── BootReceiver.kt          # Boot completed receiver
@@ -104,8 +107,8 @@ app_pocet/
 ### 3. Build & Install
 
 ```bash
-# Build debug APK
-./gradlew assembleDebug
+# Build debug APK (use GitHub Actions on ARM64)
+gh workflow run build.yml
 
 # Install on device
 adb install app/build/outputs/apk/debug/app-debug.apk

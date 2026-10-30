@@ -43,6 +43,10 @@ class SheetsRepository(
     private suspend fun writeBalanceInternal(result: BalanceResult): Result<Unit> {
         try {
             val service = authManager.getSheetsService()
+            if (service == null) {
+                return Result.failure(SheetsAuthException("Not signed in. Interactive sign-in required."))
+            }
+
             val today = dateUtils.getCurrentDateForSheets()
 
             Timber.d("Looking for date: $today in range $DATE_RANGE")
@@ -126,6 +130,10 @@ class SheetsRepository(
     private suspend fun readBalanceInternal(): Result<Double?> {
         try {
             val service = authManager.getSheetsService()
+            if (service == null) {
+                return Result.failure(SheetsAuthException("Not signed in. Interactive sign-in required."))
+            }
+
             val today = dateUtils.getCurrentDateForSheets()
 
             val dateResponse = service.spreadsheets().values()
@@ -181,6 +189,9 @@ class SheetsRepository(
     suspend fun testConnection(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val service = authManager.getSheetsService()
+            if (service == null) {
+                return Result.failure(SheetsAuthException("Not signed in. Interactive sign-in required."))
+            }
             service.spreadsheets().get(SPREADSHEET_ID).execute()
             Result.success(Unit)
         } catch (e: Exception) {

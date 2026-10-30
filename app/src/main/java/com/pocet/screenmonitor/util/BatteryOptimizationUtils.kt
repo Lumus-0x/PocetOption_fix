@@ -25,22 +25,22 @@ class BatteryOptimizationUtils(private val context: Context) {
     }
 
     /**
-     * Request battery optimization exemption from user
+     * Get intent to request battery optimization exemption from user
+     * Caller should launch this via ActivityResultLauncher
      */
-    fun requestBatteryOptimizationExemption(activity: Activity, requestCode: Int = 1001): Boolean {
+    fun getRequestBatteryOptimizationExemptionIntent(): Intent? {
         if (!isIgnoringBatteryOptimizations()) {
             val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
             intent.data = Uri.parse("package:${context.packageName}")
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
             if (intent.resolveActivity(context.packageManager) != null) {
-                activity.startActivityForResult(intent, requestCode)
-                return true
+                return intent
             } else {
                 Timber.w("No activity found to handle battery optimization request")
             }
         }
-        return false
+        return null
     }
 
     /**
@@ -65,20 +65,20 @@ class BatteryOptimizationUtils(private val context: Context) {
     }
 
     /**
-     * Request exact alarm permission (Android 14+)
+     * Get intent to request exact alarm permission (Android 14+)
+     * Caller should launch this via ActivityResultLauncher
      */
-    fun requestExactAlarmPermission(activity: Activity, requestCode: Int = 1002): Boolean {
+    fun getRequestExactAlarmPermissionIntent(): Intent? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!canScheduleExactAlarms()) {
                 val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 if (intent.resolveActivity(context.packageManager) != null) {
-                    activity.startActivityForResult(intent, requestCode)
-                    return true
+                    return intent
                 }
             }
         }
-        return false
+        return null
     }
 
     /**
@@ -95,7 +95,7 @@ class BatteryOptimizationUtils(private val context: Context) {
     }
 
     /**
-     * Request notification permission (Android 13+)
+     * Request notification permission (Android 13+) - runtime permission
      */
     fun requestNotificationPermission(activity: Activity, requestCode: Int = 1003): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

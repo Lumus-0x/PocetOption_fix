@@ -20,6 +20,7 @@ import com.pocet.screenmonitor.util.BatteryOptimizationUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -135,23 +136,6 @@ class CaptureScheduler(private val context: Context) {
     }
 
     /**
-     * Check if service should be running and restart if needed
-     */
-    fun ensureServiceRunning() {
-        val isRunning = prefs.getBoolean(PREF_KEY_SERVICE_RUNNING, false)
-        if (isRunning) {
-            // Check if WorkManager work is still enqueued
-            workManager.getWorkInfosByTagLiveData(WORK_TAG).observeForever { workInfos ->
-                val hasRunningWork = workInfos.any { it.state.isFinished.not() }
-                if (!hasRunningWork) {
-                    Timber.d("No running work found, rescheduling")
-                    schedulePeriodicCapture()
-                }
-            }
-        }
-    }
-
-    /**
      * Mark service as running/stopped
      */
     fun setServiceRunning(running: Boolean) {
@@ -171,7 +155,7 @@ class CaptureScheduler(private val context: Context) {
     fun rescheduleOnBoot() {
         scheduleScope.launch {
             // Small delay to let system settle
-            Thread.sleep(5000)
+            delay(5000)
             schedulePeriodicCapture()
             setServiceRunning(true)
         }

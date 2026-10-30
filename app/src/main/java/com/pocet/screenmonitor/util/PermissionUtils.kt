@@ -13,6 +13,8 @@ object PermissionUtils {
     // These are the runtime permissions we need to request
     // Note: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is NOT a regular runtime permission,
     // it requires a special intent (Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+    // Note: SCHEDULE_EXACT_ALARM is NOT a runtime permission on Android 14+,
+    // it requires a special intent (Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
 
     const val REQUEST_CODE_PERMISSIONS = 2000
 
@@ -21,6 +23,7 @@ object PermissionUtils {
         android.Manifest.permission.ACCESS_NETWORK_STATE,
         android.Manifest.permission.RECEIVE_BOOT_COMPLETED
         // REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is handled separately via BatteryOptimizationUtils
+        // SCHEDULE_EXACT_ALARM is handled separately via BatteryOptimizationUtils
     )
 
     // Android 13+ notification permission
@@ -30,15 +33,8 @@ object PermissionUtils {
         emptyArray<String>()
     }
 
-    // Android 14+ exact alarm permission
-    val EXACT_ALARM_PERMISSION = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        arrayOf(android.Manifest.permission.SCHEDULE_EXACT_ALARM, android.Manifest.permission.USE_EXACT_ALARM)
-    } else {
-        emptyArray<String>()
-    }
-
     fun checkAllPermissions(context: Context): Boolean {
-        val allPermissions = REQUIRED_PERMISSIONS + NOTIFICATION_PERMISSION + EXACT_ALARM_PERMISSION
+        val allPermissions = REQUIRED_PERMISSIONS + NOTIFICATION_PERMISSION
         return allPermissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
     }
 
@@ -57,12 +53,6 @@ object PermissionUtils {
             }
         }
 
-        for (permission in EXACT_ALARM_PERMISSION) {
-            if (ContextCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(permission)
-            }
-        }
-
         if (permissionsToRequest.isNotEmpty()) {
             ActivityCompat.requestPermissions(
                 activity,
@@ -73,7 +63,7 @@ object PermissionUtils {
     }
 
     fun shouldShowRequestPermissionRationale(activity: Activity): Boolean {
-        val allPermissions = REQUIRED_PERMISSIONS + NOTIFICATION_PERMISSION + EXACT_ALARM_PERMISSION
+        val allPermissions = REQUIRED_PERMISSIONS + NOTIFICATION_PERMISSION
         return allPermissions.any { ActivityCompat.shouldShowRequestPermissionRationale(activity, it) }
     }
 }

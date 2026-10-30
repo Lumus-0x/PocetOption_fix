@@ -1,6 +1,8 @@
 package com.pocet.screenmonitor.util
 
-import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -8,36 +10,30 @@ import java.util.TimeZone
 class DateUtils {
 
     // Google Sheets date format - common formats to try
+    // Using DateTimeFormatter which is thread-safe (unlike SimpleDateFormat)
     private val sheetDateFormatters = listOf(
-        SimpleDateFormat("MM/dd/yyyy", Locale.US),
-        SimpleDateFormat("yyyy-MM-dd", Locale.US),
-        SimpleDateFormat("dd/MM/yyyy", Locale.US),
-        SimpleDateFormat("MM-dd-yyyy", Locale.US),
-        SimpleDateFormat("yyyy/MM/dd", Locale.US)
-    ).also { formatters ->
-        formatters.forEach { it.timeZone = TimeZone.getDefault() }
-    }
+        DateTimeFormatter.ofPattern("MM/dd/yyyy", Locale.US),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US),
+        DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.US),
+        DateTimeFormatter.ofPattern("MM-dd-yyyy", Locale.US),
+        DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.US)
+    )
 
-    private val currentDateFormatter = SimpleDateFormat("MM/dd/yyyy", Locale.US).apply {
-        timeZone = TimeZone.getDefault()
-    }
-
-    private val isoDateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-        timeZone = TimeZone.getDefault()
-    }
+    private val currentDateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy", Locale.US)
+    private val isoDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
 
     /**
      * Get current date formatted for Google Sheets (MM/dd/yyyy)
      */
     fun getCurrentDateForSheets(): String {
-        return currentDateFormatter.format(Date())
+        return LocalDate.now().format(currentDateFormatter)
     }
 
     /**
      * Get current date in ISO format (yyyy-MM-dd)
      */
     fun getCurrentDateIso(): String {
-        return isoDateFormatter.format(Date())
+        return LocalDate.now().format(isoDateFormatter)
     }
 
     /**
@@ -47,9 +43,9 @@ class DateUtils {
         val trimmed = dateString.trim()
         for (formatter in sheetDateFormatters) {
             try {
-                val date = formatter.parse(trimmed)
-                return currentDateFormatter.format(date!!)
-            } catch (e: Exception) {
+                val date = LocalDate.parse(trimmed, formatter)
+                return date.format(currentDateFormatter)
+            } catch (e: DateTimeParseException) {
                 // Try next format
             }
         }

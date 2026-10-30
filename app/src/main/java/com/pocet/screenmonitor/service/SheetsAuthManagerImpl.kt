@@ -58,52 +58,58 @@ class SheetsAuthManagerImpl @Inject constructor(
 
     /**
      * Get authenticated Sheets service, prompting for sign-in if needed
+     * Returns null if not signed in and interactive sign-in is required
      */
-    override suspend fun getSheetsService(): Sheets = withContext(Dispatchers.IO) {
-        val account = getOrSignInAccount()
+    override suspend fun getSheetsService(): Sheets? = withContext(Dispatchers.IO) {
+        val accountResult = getAccountOrNull()
+        if (!accountResult.isSuccess) {
+            return@withContext null
+        }
+        val account = accountResult.getOrNull()
+        if (account == null) {
+            return@withContext null
+        }
         val credential = createCredential(account)
         buildSheetsService(credential)
     }
 
     /**
-     * Get existing signed-in account or prompt for sign-in
+     * Get existing signed-in account or null if interactive sign-in is required
+     * Does NOT throw - returns Result for caller to handle
      */
-    private suspend fun getOrSignInAccount(): GoogleSignInAccount = withContext(Dispatchers.IO) {
+    suspend fun getAccountOrNull(): Result<GoogleSignInAccount> = withContext(Dispatchers.IO) {
         // Try to get already signed-in account
         var account = GoogleSignIn.getLastSignedInAccount(context)
 
         if (account == null) {
-            // Try to restore from saved account name
+            // Try to restore from saved account name via silent sign-in
             val savedAccountName = encryptedPrefs.getString(PREF_KEY_ACCOUNT_NAME, null)
             if (savedAccountName != null) {
-                // Need to trigger sign-in to get the account
                 val client = GoogleSignIn.getClient(context, signInOptions!!)
-                account = Tasks.await(client.silentSignIn())
+                try {
+                    account = Tasks.await(client.silentSignIn())
+                } catch (e: Exception) {
+                    Timber.w(e, "Silent sign-in failed, will need interactive sign-in")
+                    // Silent sign-in failed (token expired, account removed, etc.)
+                    // Return failure so caller can trigger interactive sign-in
+                    return@withContext Result.failure(Exception("Silent sign-in failed: ${e.message}"))
+                }
             }
         }
 
         if (account == null) {
-            // Need interactive sign-in
-            account = signInInteractively()
+            // No account available - need interactive sign-in
+            return@withContext Result.failure(Exception("No signed-in account. Interactive sign-in required."))
         }
 
         // Save account name for future silent sign-in attempts
-        account?.let {
-            encryptedPrefs.putString(PREF_KEY_ACCOUNT_NAME, it.account?.name ?: "")
+        account.account?.name?.let { name ->
+            if (name.isNotEmpty()) {
+                encryptedPrefs.putString(PREF_KEY_ACCOUNT_NAME, name)
+            }
         }
 
-        return@withContext account!!
-    }
-
-    /**
-     * Perform interactive sign-in (must be called from Activity)
-     * Note: This should be called from MainActivity with startActivityForResult
-     */
-    private suspend fun signInInteractively(): GoogleSignInAccount = withContext(Dispatchers.IO) {
-        // This is a placeholder - actual sign-in must be done via Activity
-        // The Activity should call startActivityForResult with signInIntent
-        // and then we can get the result via GoogleSignIn.getSignedInAccountFromIntent
-        throw IllegalStateException("Interactive sign-in required. Call from Activity.")
+        Result.success(account)
     }
 
     /**
@@ -170,7 +176,6 @@ class SheetsAuthManagerImpl @Inject constructor(
             context,
             Collections.singleton(SheetsScopes.SPREADSHEETS)
         )
-        // Handle null account gracefully - if account is null, credential will use default account
         account.account?.let { credential.selectedAccount = it }
         return credential
     }
@@ -180,7 +185,7 @@ class SheetsAuthManagerImpl @Inject constructor(
      */
     private fun buildSheetsService(credential: GoogleAccountCredential): Sheets {
         return Sheets.Builder(NetHttpTransport(), GsonFactory.getDefaultInstance(), credential)
-            .setApplicationName("ScreenCaptureBalanceSync")
+            .setApplicationName("Pocket Option Helper")
             .build()
     }
 
