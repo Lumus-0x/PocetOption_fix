@@ -41,6 +41,7 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1,LICENSE,NOTICE}"
             excludes += "/META-INF/INDEX.LIST"
+            excludes += "/META-INF/DEPENDENCIES"
         }
         jniLibs {
             pickFirsts += "lib/**/*"
