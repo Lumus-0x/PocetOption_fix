@@ -87,7 +87,7 @@ app_pocet/
 
 ### 1. Создание Apps Script в Google Таблице
 
-1. Откройте вашу Google Таблицу
+1. Откройте вашу Google Таблицу (файл с листом **Plan_30_days**)
 2. **Расширения → Apps Script**
 3. Удалите весь код и вставьте:
 
@@ -95,17 +95,33 @@ app_pocet/
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    // data: { date: "MM/dd/yyyy", amount: "1234.56", accountType: "REAL" }
+    // data: { date: "DD.MM.YYYY", amount: "1234.56", accountType: "REAL" }
     
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Лист1');
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Plan_30_days');
+    if (!sheet) {
+      return ContentService.createTextOutput('Error: Sheet "Plan_30_days" not found');
+    }
+    
     const dates = sheet.getRange('B:B').getValues().flat();
-    const row = dates.findIndex(d => d === data.date) + 1;
+    // Ищем сегодняшнюю дату в формате DD.MM.YYYY
+    const today = data.date; // Приходит из приложения как "06.11.2026"
+    
+    const row = dates.findIndex(d => {
+      if (!d) return false;
+      const cellDate = new Date(d);
+      if (isNaN(cellDate.getTime())) return false;
+      // Нормализуем дату из ячейки к DD.MM.YYYY
+      const day = String(cellDate.getDate()).padStart(2, '0');
+      const month = String(cellDate.getMonth() + 1).padStart(2, '0');
+      const year = cellDate.getFullYear();
+      return `${day}.${month}.${year}` === today;
+    }) + 1;
     
     if (row > 0) {
       sheet.getRange(`E${row}`).setValue(data.amount);
       return ContentService.createTextOutput('OK');
     } else {
-      return ContentService.createTextOutput('Date not found: ' + data.date);
+      return ContentService.createTextOutput('Date not found: ' + today);
     }
   } catch (err) {
     return ContentService.createTextOutput('Error: ' + err.message);
@@ -119,18 +135,30 @@ function doPost(e) {
    - **У кого есть доступ: Все** (или "Все, у кого есть ссылка")
 6. **Развернуть** → скопируйте **URL веб-приложения** (формат: `https://script.google.com/macros/s/.../exec`)
 
-### 2. Настройка таблицы
+### 2. Подготовка таблицы (лист Plan_30_days)
 
-- Колонка **B (строки 6–35)**: даты в формате `MM/dd/yyyy` (например: `01/15/2024`)
-- Колонка **E**: сюда будет записываться баланс
-- Поддерживаемые форматы дат: `MM/dd/yyyy`, `yyyy-MM-dd`, `dd/MM/yyyy`, `MM-dd-yyyy`
+| Колонка | Назначение | Формат |
+|---------|------------|--------|
+| **B** (строки 6–35) | Даты | Любой, понятный Google Sheets: `06.11.2026`, `2026-11-06`, `06/11/2026` |
+| **E** | Сумма баланса | Записывается автоматически |
+
+**Пример заполнения колонки B:**
+```
+B6:  01.11.2026
+B7:  02.11.2026
+B8:  03.11.2026
+...
+B35: 30.11.2026
+```
+
+> ⚠️ **Важно**: Лист должен называться точно **`Plan_30_days`** (регистр важен). Если лист называется иначе — обновите `getSheetByName('Plan_30_days')` в коде Apps Script.
 
 ### 3. Ввод URL в приложении
 
 1. Откройте приложение
 2. Нажмите **"URL Apps Script не задан"**
 3. Вставьте скопированный URL → **Сохранить**
-3. Нажмите **"Проверить соединение"** — должно появиться "Соединение успешно!"
+4. Нажмите **"Проверить соединение"** — должно появиться "Соединение успешно!"
 
 ### 4. Сборка и установка (только GitHub Actions)
 
@@ -145,9 +173,14 @@ gh run download <run-id> -n app-debug
 adb install app-debug.apk
 ```
 
+Или скачайте готовый APK из релиза:
+```
+https://github.com/Lumus-0x/PocetOption_fix/releases/latest
+```
+
 ### 5. Запуск на устройстве
 
-1. **Откройте приложение** → проверьте, что URL задан
+1. **Откройте приложение** → проверьте, что URL задан (кнопка показывает "URL Apps Script задан ✓")
 2. **Нажмите "Запросить все разрешения"**:
    - Исключение из оптимизации батареи (критично для фона)
    - Точные будильники (Android 14+)
@@ -155,14 +188,30 @@ adb install app-debug.apk
 3. **Нажмите "Начать захват"** → разрешите запись экрана в системном диалоге
 4. Приложение работает в фоне, проверяет экран каждые 10 секунд
 
-## Формат Google Таблицы
+## Как это работает
 
-| Строка | Колонка B (Дата) | Колонка E (Сумма) |
-|------|------------------|-------------------|
-| 6    | 01/15/2024       | *авто*            |
-| 7    | 01/16/2024       | *авто*            |
-| ...  | ...              | ...               |
-| 35   | 02/13/2024       | *авто*            |
+1. Приложение каждые 10 сек захватывает экран через `MediaProjection`
+2. ML Kit распознаёт текст на кадре
+3. Парсер ищет ключевые слова: `qt real usd`, `qt demo usd`, `real usd`, `demo usd`
+4. Найдя ключевое слово, ищет сумму **ниже** (в следующих 4 строках) или на той же строке
+5. Формирует JSON: `{ "date": "06.11.2026", "amount": "1234.56", "accountType": "REAL" }`
+6. POST на ваш Apps Script Web App URL
+7. Apps Script находит в листе `Plan_30_days` строку с сегодняшней датой в колонке B
+8. Записывает сумму в колонку E этой строки
+
+## Формат данных
+
+**Отправляемый JSON (Apps Script):**
+```json
+{
+  "date": "06.11.2026",
+  "amount": "1234.56",
+  "accountType": "REAL"
+}
+```
+
+**Поддерживаемые форматы сумм на экране:**
+- `$1,234.56` | `1,234.56` | `1234.56` | `1.234,56` (EU)
 
 ## Ключевые детали реализации
 
@@ -187,17 +236,8 @@ adb install app-debug.apk
 - Запускает ML Kit Text Recognition
 - Парсит текстовые блоки на ключевые слова + суммы
 
-### Паттерны парсинга
-```kotlin
-// Ключевые слова
-"qt real usd", "qt demo usd", "real usd", "demo usd"
-
-// Форматы сумм
-$1,234.56 | 1,234.56 | 1234.56 | 1.234,56 (EU)
-```
-
 ### Логика отправки в Apps Script
-1. Формирует JSON: `{ "date": "MM/dd/yyyy", "amount": "1234.56", "accountType": "REAL" }`
+1. Формирует JSON с датой в формате `DD.MM.YYYY`
 2. POST на Web App URL с таймаутом 30 сек
 3. Минимум 1 минута между отправками (защита от спама)
 4. Логирует успех/ошибку в уведомление
@@ -214,8 +254,17 @@ $1,234.56 | 1,234.56 | 1234.56 | 1.234,56 (EU)
 |----------|---------|
 | Сервис убивается в фоне | Отключите оптимизацию батареи, дайте разрешение точных будильников |
 | OCR не находит текст | Проверьте яркость экрана, убедитесь что "qt real usd" видно |
-| Ошибка отправки | Проверьте URL Apps Script, права доступа таблицы, формат даты в колонке B |
+| Ошибка отправки | Проверьте URL Apps Script, права доступа таблицы, имя листа `Plan_30_days` |
+| "Date not found" | Проверьте формат дат в колонке B — должны парситься в Date |
 | MediaProjection отклонён | Пользователь должен разрешить в системном диалоге |
+
+### Отладка Apps Script
+
+В Apps Script: **Выполнения** (Executions) — увидите логи каждого POST:
+- `OK` — успех
+- `Date not found: 06.11.2026` — нет сегодняшней даты в колонке B
+- `Error: Sheet "Plan_30_days" not found` — неверное имя листа
+- `Error: ...` — другая ошибка (проверьте код)
 
 ## Разрешения
 
