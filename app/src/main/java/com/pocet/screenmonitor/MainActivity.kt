@@ -390,7 +390,7 @@ class MainActivity : AppCompatActivity() {
         val errorToCopy = lastTestError ?: getString(R.string.toast_connection_failed, "No error details")
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
         val clip = android.content.ClipData.newPlainText("Apps Script Error", errorToCopy)
-        clipboard.primaryClip = clip
+        clipboard.setPrimaryClip(clip)
         Toast.makeText(this, getString(R.string.toast_error_copied), Toast.LENGTH_SHORT).show()
         Timber.d("Error copied to clipboard: $errorToCopy")
     }
