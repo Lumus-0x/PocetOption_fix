@@ -81,7 +81,14 @@ class AppsScriptClient private constructor(
                     AppsScriptResult.Success(responseBody)
                 } else {
                     Timber.e("Apps Script error: ${response.code} - $responseBody")
-                    AppsScriptResult.Error("HTTP ${response.code}: $responseBody")
+                    // Detect HTML error pages (Google login, bot protection, etc.)
+                    val errorMessage = if (responseBody.trim().startsWith("<")) {
+                        // It's an HTML page - likely Google login/consent or bot protection
+                        "HTTP ${response.code}: Получен HTML вместо JSON. Проверьте настройки Web App: Развернуть → Веб-приложение → Доступ: Все"
+                    } else {
+                        "HTTP ${response.code}: $responseBody"
+                    }
+                    AppsScriptResult.Error(errorMessage)
                 }
             }
         } catch (e: Exception) {

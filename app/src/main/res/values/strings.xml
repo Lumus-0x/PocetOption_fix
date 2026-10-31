@@ -54,6 +54,11 @@
     <string name="toast_web_app_url_saved">URL Apps Script сохранен</string>
     <string name="toast_web_app_url_required">Сначала укажите URL Apps Script</string>
     <string name="toast_invalid_web_app_url">Неверный URL. Должен начинаться с https://script.google.com/</string>
+    <string name="toast_error_copied">Ошибка скопирована в буфер обмена</string>
+
+    <!-- Copy error button -->
+    <string name="btn_copy_error">📋 Скопировать ошибку</string>
+    <string name="status_connection_error">❌ Ошибка соединения (нажмите кнопку ниже, чтобы скопировать)</string>
 
     <!-- Notifications -->
     <string name="notification_channel_name">Pocket Option Helper</string>

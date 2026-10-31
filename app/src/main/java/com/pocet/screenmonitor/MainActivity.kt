@@ -51,9 +51,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnTestConnection: Button
     private lateinit var btnRequestPermissions: Button
     private lateinit var btnSetWebAppUrl: Button
+    private lateinit var btnCopyError: Button
     private lateinit var rgAccountType: RadioGroup
     private lateinit var rbReal: RadioButton
     private lateinit var rbDemo: RadioButton
+
+    // Store last error for copy functionality
+    private var lastTestError: String? = null
 
     // Activity Result Launchers
     private val mediaProjectionLauncher = registerForActivityResult(
@@ -110,6 +114,7 @@ class MainActivity : AppCompatActivity() {
         btnTestConnection = findViewById(R.id.btnTestConnection)
         btnRequestPermissions = findViewById(R.id.btnRequestPermissions)
         btnSetWebAppUrl = findViewById(R.id.btnSetWebAppUrl)
+        btnCopyError = findViewById(R.id.btnCopyError)
         rgAccountType = findViewById(R.id.rgAccountType)
         rbReal = findViewById(R.id.rbReal)
         rbDemo = findViewById(R.id.rbDemo)
@@ -124,6 +129,9 @@ class MainActivity : AppCompatActivity() {
         rgAccountType.setOnCheckedChangeListener { _, checkedId ->
             saveAccountTypePreference(checkedId)
         }
+
+        // Copy error button click listener
+        btnCopyError.setOnClickListener { copyErrorToClipboard() }
     }
 
     private fun initManagers() {
@@ -334,6 +342,8 @@ class MainActivity : AppCompatActivity() {
 
         updateStatus(getString(R.string.status_testing_connection))
         btnTestConnection.isEnabled = false
+        btnCopyError.visibility = View.GONE
+        lastTestError = null
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -353,21 +363,36 @@ class MainActivity : AppCompatActivity() {
                     btnTestConnection.isEnabled = true
                     if (result.isSuccess) {
                         updateStatus(getString(R.string.status_connection_success))
+                        btnCopyError.visibility = View.GONE
                         Toast.makeText(this@MainActivity, getString(R.string.toast_connection_success), Toast.LENGTH_SHORT).show()
                     } else {
                         val errorMsg = result.errorMessage ?: "Unknown error"
-                        updateStatus(getString(R.string.toast_connection_failed, errorMsg))
+                        lastTestError = errorMsg
+                        updateStatus(getString(R.string.status_connection_error))
+                        btnCopyError.visibility = View.VISIBLE
                         Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, errorMsg), Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
                 runOnUiThread {
                     btnTestConnection.isEnabled = true
-                    updateStatus(getString(R.string.toast_connection_failed, e.message ?: "Error"))
-                    Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, e.message ?: "Error"), Toast.LENGTH_LONG).show()
+                    val errorMsg = e.message ?: "Error"
+                    lastTestError = errorMsg
+                    updateStatus(getString(R.string.status_connection_error))
+                    btnCopyError.visibility = View.VISIBLE
+                    Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, errorMsg), Toast.LENGTH_LONG).show()
                 }
             }
         }
+    }
+
+    private fun copyErrorToClipboard() {
+        val errorToCopy = lastTestError ?: getString(R.string.toast_connection_failed, "No error details")
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val clip = android.content.ClipData.newPlainText("Apps Script Error", errorToCopy)
+        clipboard.primaryClip = clip
+        Toast.makeText(this, getString(R.string.toast_error_copied), Toast.LENGTH_SHORT).show()
+        Timber.d("Error copied to clipboard: $errorToCopy")
     }
 
     private fun stopCaptureService() {
