@@ -259,7 +259,7 @@ class ScreenCaptureService : Service() {
         Timber.d("Creating VirtualDisplay: ${width}x${height}, density=$density, surface=${imageReader?.surface != null}")
 
         try {
-            virtualDisplay = projection.createVirtualDisplay(
+            val vd = projection.createVirtualDisplay(
                 "ScreenCaptureDisplay",
                 width, height, density,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
@@ -268,10 +268,12 @@ class ScreenCaptureService : Service() {
                 null  // Handler
             )
 
-            if (virtualDisplay == null) {
+            virtualDisplay = vd
+
+            if (vd == null) {
                 Timber.e("Failed to create virtual display - returned null")
             } else {
-                Timber.d("VirtualDisplay created successfully: ${virtualDisplay.display}")
+                Timber.d("VirtualDisplay created successfully: ${vd.display}")
             }
         } catch (e: Exception) {
             Timber.e(e, "Exception creating virtual display")
