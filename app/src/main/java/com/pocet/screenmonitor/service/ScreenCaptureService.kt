@@ -220,6 +220,21 @@ class ScreenCaptureService : Service() {
 
         try {
             setupImageReader()
+
+            // CRITICAL: Register MediaProjection callback BEFORE creating VirtualDisplay
+            // Required on Android 14+ (API 34+)
+            mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    Timber.d("MediaProjection stopped by system")
+                    mainScope.launch {
+                        stopCapture()
+                        sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
+                        stopSelf()
+                    }
+                }
+            }, Handler(Looper.getMainLooper()))
+            Timber.d("MediaProjection callback registered")
+
             val vdCreated = createVirtualDisplay()
 
             if (!vdCreated || virtualDisplay == null) {
@@ -233,18 +248,6 @@ class ScreenCaptureService : Service() {
             isCapturing = true
             // Foreground already started in onStartCommand, just update notification if needed
             startCaptureLoop()
-
-            // Register MediaProjection callback
-            mediaProjection?.registerCallback(object : MediaProjection.Callback() {
-                override fun onStop() {
-                    Timber.d("MediaProjection stopped by system")
-                    mainScope.launch {
-                        stopCapture()
-                        sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
-                        stopSelf()
-                    }
-                }
-            }, Handler(Looper.getMainLooper()))
 
             // Notify that capture started successfully
             sendBroadcast(Intent(ACTION_CAPTURE_STARTED))
@@ -305,24 +308,7 @@ class ScreenCaptureService : Service() {
                 width, height, density,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 surface,
-                object : VirtualDisplay.Callback() {
-                    override fun onPaused() {
-                        Timber.w("VirtualDisplay paused")
-                    }
-
-                    override fun onResumed() {
-                        Timber.d("VirtualDisplay resumed")
-                    }
-
-                    override fun onStopped() {
-                        Timber.w("VirtualDisplay stopped")
-                        mainScope.launch {
-                            stopCapture()
-                            sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
-                            stopSelf()
-                        }
-                    }
-                },
+                null, // VirtualDisplay.Callback - not needed since we have MediaProjection callback
                 Handler(Looper.getMainLooper())
             )
 
