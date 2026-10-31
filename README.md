@@ -1,95 +1,99 @@
 # Pocket Option Helper
 
-Android-приложение (API 26+), работающее в фоне, мониторящее экран на предмет баланса торгового аккаунта Pocket Option ("qt real usd" или "qt demo usd") и отправляющее его в Google Таблицы через **Google Apps Script Web App**.
+<div align="center">
 
-## Особенности
+![Android](https://img.shields.io/badge/Android-8.0%2B-green?logo=android)
+![API](https://img.shields.io/badge/API-26%2B-brightgreen)
+![Target SDK](https://img.shields.io/badge/Target%20SDK-35-blue)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-purple?logo=kotlin)
+![Hilt](https://img.shields.io/badge/Hilt-2.51-orange)
+![ML Kit](https://img.shields.io/badge/ML%20Kit-Text%20Recognition-4285F4?logo=google)
+![Build](https://img.shields.io/badge/Build-GitHub%20Actions-2088FF?logo=githubactions)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-- **Фоновый захват экрана**: MediaProjection API + Foreground Service для непрерывного мониторинга
-- **OCR на устройстве**: ML Kit Text Recognition обрабатывает контент экрана локально (без облака)
-- **Умное определение баланса**: Ищет "qt real usd" / "qt demo usd" и извлекает ближайшие суммы
-- **Интеграция через Apps Script**: Простой HTTP POST на Web App URL — **нет OAuth / Google Sign-In**
-- **Оптимизация батареи**: Учёт Doze mode, запрос исключения из оптимизации, WorkManager для планирования
-- **Android 14+ совместимость**: Foreground service types, точные будильники, разрешения уведомлений
+**Android-приложение для фонового мониторинга баланса Pocket Option и автоматической синхронизации с Google Таблицами через Apps Script**
 
-## Архитектура
+[📥 Скачать последний APK](https://github.com/Lumus-0x/PocetOption_fix/releases/latest) • [📋 Полный CHANGELOG](CHANGELOG.md) • [🐛 Сообщить об ошибке](https://github.com/Lumus-0x/PocetOption_fix/issues)
 
+</div>
+
+---
+
+## ✨ Особенности
+
+| Функция | Описание |
+|---------|----------|
+| 🎥 **Фоновый захват экрана** | MediaProjection API + Foreground Service (каждые 10 сек) |
+| 🔍 **OCR на устройстве** | ML Kit Text Recognition — 100% локально, без облака |
+| 🧠 **Умный парсинг** | Ищет `qt real usd` / `qt demo usd` → извлекает ближайшие суммы |
+| 📊 **Apps Script интеграция** | Простой HTTP POST — **нет OAuth, нет Google Sign-In** |
+| 🔋 **Батарея-оптимизация** | Doze mode aware, исключение из оптимизации, WorkManager |
+| 📱 **Android 14+ Ready** | Foreground service types, точные будильники, уведомления |
+
+---
+
+## 🏗 Архитектура
+
+```mermaid
+graph LR
+    A[MediaProjection] --> B[VirtualDisplay]
+    B --> C[ImageReader]
+    C --> D[ML Kit OCR]
+    D --> E[TextParser]
+    E --> F[AppsScriptClient]
+    F --> G[Apps Script Web App]
+    G --> H[Google Таблица<br/>Plan_30_days]
 ```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  MediaProjection │────▶│  VirtualDisplay  │────▶│   ImageReader   │
-└─────────────────┘     └──────────────────┘     └────────┬────────┘
-                                                          │
-                                                          ▼
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Apps Script    │◀────│  AppsScriptClient │◀────│   TextParser    │
-│  Web App (POST) │     │   (OkHttp)       │     │  (Regex Match)  │
-└─────────────────┘     └──────────────────┘     └────────┬────────┘
-                                                          │
-                                                          ▼
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Foreground     │────▶│   OcrProcessor   │────▶│  ML Kit Text    │
-│  Service        │     │  (Bitmap Convert)│     │  Recognition    │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-```
 
-## Структура проекта
+---
+
+## 📁 Структура проекта
 
 ```
 app_pocet/
 ├── app/
 │   ├── src/main/
 │   │   ├── java/com/pocet/screenmonitor/
-│   │   │   ├── PocetApplication.kt          # Hilt Application
-│   │   │   ├── MainActivity.kt              # Main UI & permission handling
+│   │   │   ├── PocetApplication.kt           # Hilt Application
+│   │   │   ├── MainActivity.kt               # Main UI & permissions
 │   │   │   ├── di/
-│   │   │   │   ├── AppModule.kt             # Hilt DI module
-│   │   │   │   └── ServiceEntryPoint.kt     # EntryPoint для Services
-│   │   │   ├── model/
-│   │   │   │   └── BalanceResult.kt         # Модель распознанного баланса
+│   │   │   │   ├── AppModule.kt              # Hilt DI module
+│   │   │   │   └── ServiceEntryPoint.kt      # EntryPoint для Services
+│   │   │   ├── model/BalanceResult.kt        # Модель баланса
 │   │   │   ├── service/
-│   │   │   │   ├── ScreenCaptureService.kt  # Foreground service (core)
-│   │   │   │   ├── OcrProcessor.kt          # ML Kit OCR pipeline
-│   │   │   │   ├── TextParser.kt            # Логика извлечения баланса
-│   │   │   │   ├── AppsScriptClient.kt      # HTTP клиент для Apps Script
-│   │   │   │   └── CaptureScheduler.kt      # WorkManager планирование
-│   │   │   ├── receiver/
-│   │   │   │   └── BootReceiver.kt          # Boot completed receiver
-│   │   │   └── util/
-│   │   │       ├── BatteryOptimizationUtils.kt
-│   │   │       ├── DateUtils.kt
-│   │   │       ├── EncryptedPrefsUtil.kt
-│   │   │       └── PermissionUtils.kt
-│   │   ├── res/
-│   │   │   ├── layout/activity_main.xml
-│   │   │   ├── values/strings.xml, colors.xml, themes.xml
-│   │   │   ├── drawable/ (icons)
-│   │   │   ├── xml/ (backup_rules, data_extraction_rules)
-│   │   │   └── mipmap-*/ (launcher icons)
-│   │   └── AndroidManifest.xml
-│   ├── build.gradle.kts
-│   └── proguard-rules.pro
-├── gradle/
-│   ├── libs.versions.toml
-│   └── wrapper/gradle-wrapper.properties
-├── build.gradle.kts
-├── settings.gradle.kts
-├── gradle.properties
-└── README.md
+│   │   │   │   ├── ScreenCaptureService.kt   # Foreground service (core)
+│   │   │   │   ├── OcrProcessor.kt           # ML Kit OCR pipeline
+│   │   │   │   ├── TextParser.kt             # Логика извлечения баланса
+│   │   │   │   ├── AppsScriptClient.kt       # HTTP клиент (OkHttp)
+│   │   │   │   └── CaptureScheduler.kt       # WorkManager планирование
+│   │   │   ├── receiver/BootReceiver.kt      # Boot completed
+│   │   │   └── util/                         # Utils: Battery, Date, Crypto, Permissions
+│   │   └── res/                              # Layouts, strings, themes, icons
+│   └── build.gradle.kts
+├── gradle/libs.versions.toml                 # Version catalog
+└── build.gradle.kts
 ```
 
-## Требования
+---
 
-- Android 8.0+ (API 26) — Min SDK
-- Android 14+ (API 34) — Target SDK (поддержка foreground service type)
-- Google Play Services (для ML Kit)
-- Интернет для отправки данных в Apps Script
+## ⚙️ Требования
 
-## Настройка (5 минут)
+| Требование | Версия |
+|------------|--------|
+| **Min SDK** | Android 8.0 (API 26) |
+| **Target SDK** | Android 15 (API 35) |
+| **Google Play Services** | Для ML Kit Text Recognition |
+| **Интернет** | Для HTTP POST в Apps Script |
 
-### 1. Создание Apps Script в Google Таблице
+---
 
-1. Откройте вашу Google Таблицу (файл с листом **Plan_30_days**)
+## 🚀 Быстрый старт (5 минут)
+
+### 1️⃣ Создайте Apps Script в Google Таблице
+
+1. Откройте вашу Google Таблицу (лист **`Plan_30_days`**)
 2. **Расширения → Apps Script**
-3. Удалите весь код и вставьте:
+3. Вставьте код ниже:
 
 ```javascript
 function doPost(e) {
@@ -103,14 +107,12 @@ function doPost(e) {
     }
     
     const dates = sheet.getRange('B:B').getValues().flat();
-    // Ищем сегодняшнюю дату в формате DD.MM.YYYY
-    const today = data.date; // Приходит из приложения как "06.11.2026"
+    const today = data.date; // Приходит как "06.11.2026"
     
     const row = dates.findIndex(d => {
       if (!d) return false;
       const cellDate = new Date(d);
       if (isNaN(cellDate.getTime())) return false;
-      // Нормализуем дату из ячейки к DD.MM.YYYY
       const day = String(cellDate.getDate()).padStart(2, '0');
       const month = String(cellDate.getMonth() + 1).padStart(2, '0');
       const year = cellDate.getFullYear();
@@ -129,20 +131,19 @@ function doPost(e) {
 }
 ```
 
-4. **Сохранить** (Ctrl+S) → проект назовите "Pocket Option Helper"
+4. **Сохранить** (Ctrl+S) → назовите проект "Pocket Option Helper"
 5. **Развернуть → Новое развёртывание → Тип: Веб-приложение**
-   - **Выполнять от моего имени**
-   - **У кого есть доступ: Все** (или "Все, у кого есть ссылка")
-6. **Развернуть** → скопируйте **URL веб-приложения** (формат: `https://script.google.com/macros/s/.../exec`)
+   - ✅ **Выполнять от моего имени**
+   - ✅ **У кого есть доступ: Все**
+6. **Развернуть** → скопируйте **URL** (`https://script.google.com/macros/s/.../exec`)
 
-### 2. Подготовка таблицы (лист Plan_30_days)
+### 2️⃣ Подготовьте таблицу (лист `Plan_30_days`)
 
 | Колонка | Назначение | Формат |
 |---------|------------|--------|
-| **B** (строки 6–35) | Даты | Любой, понятный Google Sheets: `06.11.2026`, `2026-11-06`, `06/11/2026` |
+| **B** (строки 6–35) | Даты | `06.11.2026`, `2026-11-06`, `06/11/2026` |
 | **E** | Сумма баланса | Записывается автоматически |
 
-**Пример заполнения колонки B:**
 ```
 B6:  01.11.2026
 B7:  02.11.2026
@@ -151,57 +152,71 @@ B8:  03.11.2026
 B35: 30.11.2026
 ```
 
-> ⚠️ **Важно**: Лист должен называться точно **`Plan_30_days`** (регистр важен). Если лист называется иначе — обновите `getSheetByName('Plan_30_days')` в коде Apps Script.
+> ⚠️ **Критично**: Лист должен называться точно **`Plan_30_days`** (регистр важен!)
 
-### 3. Ввод URL в приложении
+### 3️⃣ Введите URL в приложении
 
 1. Откройте приложение
 2. Нажмите **"URL Apps Script не задан"**
-3. Вставьте скопированный URL → **Сохранить**
-4. Нажмите **"Проверить соединение"** — должно появиться "Соединение успешно!"
+3. Вставьте URL → **Сохранить**
+4. Нажмите **"Проверить соединение"** → ✅ "Соединение успешно!"
 
-### 4. Сборка и установка (только GitHub Actions)
+### 4️⃣ Установите APK (только GitHub Actions)
 
 ```bash
-# Запуск сборки на GitHub Actions (ARM64 не поддерживает локальную сборку)
+# Локальная сборка на ARM64 (Raspberry Pi) НЕ работает — используйте GitHub Actions
 gh workflow run build.yml
 
-# Скачивание APK после успешной сборки
+# После сборки скачайте APK:
 gh run download <run-id> -n app-debug
 
-# Установка на устройство
+# Установите на устройство:
 adb install app-debug.apk
 ```
 
-Или скачайте готовый APK из релиза:
+**Или скачайте готовый APK из релиза:**
 ```
 https://github.com/Lumus-0x/PocetOption_fix/releases/latest
 ```
 
-### 5. Запуск на устройстве
+### 5️⃣ Запустите на устройстве
 
-1. **Откройте приложение** → проверьте, что URL задан (кнопка показывает "URL Apps Script задан ✓")
+1. **Откройте приложение** → проверьте URL (кнопка: "URL Apps Script задан ✓")
 2. **Нажмите "Запросить все разрешения"**:
-   - Исключение из оптимизации батареи (критично для фона)
-   - Точные будильники (Android 14+)
-   - Уведомления (Android 13+)
-3. **Нажмите "Начать захват"** → разрешите запись экрана в системном диалоге
-4. Приложение работает в фоне, проверяет экран каждые 10 секунд
+   - 🔋 Исключение из оптимизации батареи
+   - ⏰ Точные будильники (Android 14+)
+   - 🔔 Уведомления (Android 13+)
+3. **Нажмите "Начать захват"** → разрешите запись экрана
+4. ✅ Приложение работает в фоне, проверяет экран каждые 10 секунд
 
-## Как это работает
+---
 
-1. Приложение каждые 10 сек захватывает экран через `MediaProjection`
-2. ML Kit распознаёт текст на кадре
-3. Парсер ищет ключевые слова: `qt real usd`, `qt demo usd`, `real usd`, `demo usd`
-4. Найдя ключевое слово, ищет сумму **ниже** (в следующих 4 строках) или на той же строке
-5. Формирует JSON: `{ "date": "06.11.2026", "amount": "1234.56", "accountType": "REAL" }`
-6. POST на ваш Apps Script Web App URL
-7. Apps Script находит в листе `Plan_30_days` строку с сегодняшней датой в колонке B
-8. Записывает сумму в колонку E этой строки
+## 🔄 Как это работает
 
-## Формат данных
+```mermaid
+sequenceDiagram
+    participant App as Pocket Option Helper
+    participant Screen as Экран телефона
+    participant OCR as ML Kit OCR
+    participant Parser as TextParser
+    participant API as AppsScriptClient
+    participant Script as Apps Script
+    participant Sheet as Google Таблица
 
-**Отправляемый JSON (Apps Script):**
+    loop Каждые 10 сек
+        App->>Screen: MediaProjection захват
+        Screen-->>App: Image (RGBA_8888)
+        App->>OCR: Bitmap → Text
+        OCR-->>App: Распознанный текст
+        App->>Parser: Поиск "qt real usd" + сумма
+        Parser-->>App: BalanceResult
+        App->>API: POST JSON {date, amount, type}
+        API->>Script: HTTP POST
+        Script->>Sheet: Поиск даты в B → запись в E
+    end
+```
+
+**Формат отправляемых данных:**
 ```json
 {
   "date": "06.11.2026",
@@ -211,9 +226,11 @@ https://github.com/Lumus-0x/PocetOption_fix/releases/latest
 ```
 
 **Поддерживаемые форматы сумм на экране:**
-- `$1,234.56` | `1,234.56` | `1234.56` | `1.234,56` (EU)
+- `$1,234.56` • `1,234.56` • `1234.56` • `1.234,56` (EU)
 
-## Ключевые детали реализации
+---
+
+## 🛠 Ключевые детали реализации
 
 ### Foreground Service (Android 14+)
 ```xml
@@ -224,66 +241,87 @@ https://github.com/Lumus-0x/PocetOption_fix/releases/latest
     android:stopWithTask="false" />
 ```
 
-### Жизненный цикл MediaProjection
-1. Пользователь даёт разрешение через системный диалог
-2. Сервис создаёт `VirtualDisplay` → `ImageReader`
-3. Захватывает кадры каждые 10 секунд
-4. Обрабатывает через ML Kit в фоновом потоке
+### Жизненный цикл захвата
+1. Пользователь разрешает запись экрана (системный диалог)
+2. Сервис: `startForeground(type=mediaProjection)` → `MediaProjection` → `VirtualDisplay`
+3. Каждые 10 сек: `ImageReader.acquireLatestImage()` → ML Kit → Parser → Apps Script
 
-### OCR обработка
-- Конвертирует YUV_420_888 Image → Bitmap
-- Даунсемплинг до макс. 1920px для производительности
-- Запускает ML Kit Text Recognition
-- Парсит текстовые блоки на ключевые слова + суммы
+### OCR Pipeline
+- **Input**: YUV_420_888 / RGBA_8888 Image от ImageReader
+- **Convert**: MediaImage → Bitmap (downscale до 1920px max)
+- **Recognize**: ML Kit Text Recognition (латиница)
+- **Parse**: Блоки текста → ключевые слова → суммы ниже/рядом
 
-### Логика отправки в Apps Script
-1. Формирует JSON с датой в формате `DD.MM.YYYY`
-2. POST на Web App URL с таймаутом 30 сек
-3. Минимум 1 минута между отправками (защита от спама)
-4. Логирует успех/ошибку в уведомление
+### Защита от спама
+- Минимум **1 минута** между успешными отправками в Apps Script
+- Exponential backoff retry (max 3 попытки, base 1с, max 30с + jitter)
 
-### Оптимизация батареи
-- Запрашивает `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
-- WorkManager с ограничениями: сеть + батарея не низкая
-- Пауза в Doze mode
-- Минимум 1 минута между записями
+---
 
-## Устранение неполадок
+## 🔋 Оптимизация батареи
+
+| Механизм | Реализация |
+|----------|------------|
+| **Doze Mode** | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` через Settings Intent |
+| **WorkManager** | Constraints: `NetworkType.CONNECTED` + `BatteryNotLow` |
+| **Exact Alarms** | `SCHEDULE_EXACT_ALARM` (Android 14+) для точного планирования |
+| **Min Interval** | 1 мин между записями — защита от частых пробуждений |
+
+---
+
+## 🐛 Устранение неполадок
 
 | Проблема | Решение |
 |----------|---------|
-| Сервис убивается в фоне | Отключите оптимизацию батареи, дайте разрешение точных будильников |
-| OCR не находит текст | Проверьте яркость экрана, убедитесь что "qt real usd" видно |
-| Ошибка отправки | Проверьте URL Apps Script, права доступа таблицы, имя листа `Plan_30_days` |
-| "Date not found" | Проверьте формат дат в колонке B — должны парситься в Date |
-| MediaProjection отклонён | Пользователь должен разрешить в системном диалоге |
+| 🛑 Сервис убивается в фоне | Отключите оптимизацию батареи + разрешите точные будильники |
+| 🔍 OCR не находит текст | Проверьте яркость, убедитесь что текст "qt real usd" виден |
+| ❌ Ошибка отправки (403) | Проверьте: URL Apps Script, доступ "Все", имя листа `Plan_30_days` |
+| 📅 "Date not found" | Формат дат в колонке B должен парситься в Date объект |
+| 📷 MediaProjection отклонён | Пользователь должен нажать "Начать запись" в системном диалоге |
+| 🏷️ Sheet not found | Лист называется **точно** `Plan_30_days` (регистр!) |
 
-### Отладка Apps Script
-
-В Apps Script: **Выполнения** (Executions) — увидите логи каждого POST:
-- `OK` — успех
+### 📋 Отладка Apps Script
+В Apps Script: **Выполнения (Executions)** → логи каждого POST:
+- `OK` ✅ — успех
 - `Date not found: 06.11.2026` — нет сегодняшней даты в колонке B
 - `Error: Sheet "Plan_30_days" not found` — неверное имя листа
-- `Error: ...` — другая ошибка (проверьте код)
+- `Error: ...` — проверьте код Apps Script
 
-## Разрешения
+---
 
-| Разрешение | Назначение | Запрос |
-|------------|------------|--------|
-| `FOREGROUND_SERVICE_MEDIA_PROJECTION` | Фоновый захват экрана | Только манифест |
-| `MEDIA_PROJECTION` | Интент захвата экрана | Системный диалог |
-| `INTERNET` | HTTP POST в Apps Script | Только манифест |
-| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Защита от Doze | Settings intent |
-| `SCHEDULE_EXACT_ALARM` (Android 14+) | Точное планирование | Settings intent |
-| `POST_NOTIFICATIONS` (Android 13+) | Уведомление сервиса | Runtime диалог |
+## 📜 Разрешения
 
-## Полезные ссылки
+| Разрешение | Назначение | Как запрашивается |
+|------------|------------|-------------------|
+| `FOREGROUND_SERVICE_MEDIA_PROJECTION` | Фоновый захват | Только Manifest |
+| `MEDIA_PROJECTION` | Intent захвата экрана | Системный диалог |
+| `INTERNET` | HTTP POST | Только Manifest |
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Защита от Doze | Settings Intent |
+| `SCHEDULE_EXACT_ALARM` (API 34+) | Точное планирование | Settings Intent |
+| `POST_NOTIFICATIONS` (API 33+) | Уведомление сервиса | Runtime диалог |
 
-- [Apps Script Web App руководство](https://developers.google.com/apps-script/guides/web)
-- [ML Kit Text Recognition](https://developers.google.com/ml-kit/vision/text-recognition)
-- [MediaProjection API](https://developer.android.com/media/media-projection)
-- [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager)
+---
 
-## Лицензия
+## 📚 Полезные ссылки
 
-MIT License — модифицируйте под свои торговые нужды.
+- [📖 Apps Script Web App Guide](https://developers.google.com/apps-script/guides/web)
+- [🔍 ML Kit Text Recognition](https://developers.google.com/ml-kit/vision/text-recognition)
+- [📱 MediaProjection API](https://developer.android.com/media/media-projection)
+- [⏰ WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager)
+- [🛡️ Foreground Service Types](https://developer.android.com/develop/background-work/services/foreground-services)
+
+---
+
+## 📄 Лицензия
+
+**MIT License** — свободно модифицируйте под свои торговые нужды.
+
+---
+
+<div align="center">
+
+**Сделано для трейдеров Pocket Option** ❤️
+
+[⬆ Наверх](#pocket-option-helper)
+
+</div>
