@@ -43,6 +43,8 @@ class ScreenCaptureService : Service() {
     companion object {
         const val ACTION_START_CAPTURE = "com.pocet.screenmonitor.START_CAPTURE"
         const val ACTION_STOP_CAPTURE = "com.pocet.screenmonitor.STOP_CAPTURE"
+        const val ACTION_CAPTURE_STARTED = "com.pocet.screenmonitor.CAPTURE_STARTED"
+        const val ACTION_CAPTURE_STOPPED = "com.pocet.screenmonitor.CAPTURE_STOPPED"
         const val EXTRA_RESULT_CODE = "result_code"
         const val EXTRA_RESULT_DATA = "result_data"
         const val PREFS_NAME = "capture_prefs"
@@ -60,7 +62,6 @@ class ScreenCaptureService : Service() {
 
     private val ocrProcessor = OcrProcessor()
     private val textParser = TextParser()
-    private var appsScriptClient: AppsScriptClient? = null
     private val captureJob = SupervisorJob()
     private val mainJob = SupervisorJob()
     private val captureScope = CoroutineScope(captureJob + Dispatchers.IO)
@@ -85,25 +86,16 @@ class ScreenCaptureService : Service() {
         Timber.d("Target account type: $targetAccountType")
 
         createNotificationChannel()
-        // AppsScriptClient will be initialized lazily on first use
-    }
-
-    private fun initAppsScriptClient() {
-        // Get AppsScriptClient from Hilt EntryPoint
-        try {
-            val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ServiceEntryPoint::class.java)
-            appsScriptClient = entryPoint.appsScriptClient().get()
-            Timber.d("AppsScriptClient initialized from Hilt EntryPoint")
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to get AppsScriptClient from Hilt EntryPoint")
-        }
     }
 
     private fun getAppsScriptClient(): AppsScriptClient? {
-        if (appsScriptClient == null) {
-            initAppsScriptClient()
+        return try {
+            val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ServiceEntryPoint::class.java)
+            entryPoint.appsScriptClient().get()
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to get AppsScriptClient from Hilt EntryPoint")
+            null
         }
-        return appsScriptClient
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -130,16 +122,19 @@ class ScreenCaptureService : Service() {
                         startCapture(projection)
                     } else {
                         Timber.e("Failed to create MediaProjection - returned null")
+                        sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
                         stopSelf()
                     }
                 } else {
                     Timber.e("Invalid MediaProjection data: resultCode=$resultCode, resultData=${resultData != null}")
+                    sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
                     stopSelf()
                 }
             }
             ACTION_STOP_CAPTURE -> {
                 Timber.d("ACTION_STOP_CAPTURE received")
                 stopCapture()
+                sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
                 stopSelf()
             }
         }
@@ -154,13 +149,24 @@ class ScreenCaptureService : Service() {
     private fun startForegroundServiceWithType() {
         Timber.d("Starting foreground service with MEDIA_PROJECTION type")
 
+        // Create intent to open MainActivity when notification is tapped
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(getString(R.string.notification_text))
             .setSmallIcon(R.drawable.ic_notification)
+            .setContentIntent(pendingIntent)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT) // Higher priority for visibility
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -202,6 +208,7 @@ class ScreenCaptureService : Service() {
 
             if (virtualDisplay == null) {
                 Timber.e("VirtualDisplay is null after creation!")
+                sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
                 stopCapture()
                 stopSelf()
                 return
@@ -217,13 +224,18 @@ class ScreenCaptureService : Service() {
                     Timber.d("MediaProjection stopped by system")
                     mainScope.launch {
                         stopCapture()
+                        sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
                         stopSelf()
                     }
                 }
             }, Handler(Looper.getMainLooper()))
+
+            // Notify that capture started successfully
+            sendBroadcast(Intent(ACTION_CAPTURE_STARTED))
             Timber.d("Screen capture started successfully, capture loop running")
         } catch (e: Exception) {
             Timber.e(e, "Failed to start screen capture")
+            sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
             stopCapture()
             stopSelf()
         }
@@ -398,6 +410,9 @@ class ScreenCaptureService : Service() {
         } catch (e: Exception) {
             Timber.e(e, "Error stopping foreground service")
         }
+
+        // Notify that capture stopped
+        sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
     }
 
     private fun showForegroundNotification() {

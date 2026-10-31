@@ -1,8 +1,10 @@
 package com.pocet.screenmonitor
 
 import android.app.Activity
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -58,6 +60,26 @@ class MainActivity : AppCompatActivity() {
 
     // Store last error for copy functionality
     private var lastTestError: String? = null
+
+    // BroadcastReceiver for service state changes
+    private val serviceStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                ScreenCaptureService.ACTION_CAPTURE_STARTED -> {
+                    Timber.d("Received CAPTURE_STARTED broadcast")
+                    captureScheduler.setServiceRunning(true)
+                    updateServiceStatusUI()
+                    updateStatus(getString(R.string.status_running))
+                }
+                ScreenCaptureService.ACTION_CAPTURE_STOPPED -> {
+                    Timber.d("Received CAPTURE_STOPPED broadcast")
+                    captureScheduler.setServiceRunning(false)
+                    updateServiceStatusUI()
+                    updateStatus(getString(R.string.status_stopped))
+                }
+            }
+        }
+    }
 
     // Activity Result Launchers
     private val mediaProjectionLauncher = registerForActivityResult(
@@ -319,10 +341,9 @@ class MainActivity : AppCompatActivity() {
             }
             ContextCompat.startForegroundService(this, serviceIntent)
 
-            captureScheduler.setServiceRunning(true)
-            updateServiceStatusUI()
-            updateStatus(getString(R.string.status_running))
-            Toast.makeText(this, getString(R.string.toast_capture_started), Toast.LENGTH_SHORT).show()
+            // Service status will be updated via broadcast receiver when service actually starts
+            updateStatus(getString(R.string.status_starting_capture))
+            Toast.makeText(this, getString(R.string.toast_capture_starting), Toast.LENGTH_SHORT).show()
         } else {
             Timber.w("MediaProjection denied or cancelled")
             updateStatus(getString(R.string.status_need_permissions))
@@ -427,8 +448,23 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Register broadcast receiver for service state changes
+        val filter = IntentFilter().apply {
+            addAction(ScreenCaptureService.ACTION_CAPTURE_STARTED)
+            addAction(ScreenCaptureService.ACTION_CAPTURE_STOPPED)
+        }
+        registerReceiver(serviceStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         updateServiceStatusUI()
         loadWebAppUrl()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        try {
+            unregisterReceiver(serviceStateReceiver)
+        } catch (e: IllegalArgumentException) {
+            // Receiver not registered
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

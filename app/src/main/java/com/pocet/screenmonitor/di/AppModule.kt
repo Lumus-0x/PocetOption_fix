@@ -52,8 +52,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAppsScriptClient(@ApplicationContext context: Context, dateUtils: DateUtils): AppsScriptClient {
-        val prefs = context.getSharedPreferences("apps_script_prefs", Context.MODE_PRIVATE)
-        val webAppUrl = prefs.getString("web_app_url", "") ?: ""
-        return AppsScriptClient.create(webAppUrl, dateUtils)
+        return AppsScriptClient.create(context, dateUtils)
     }
 }

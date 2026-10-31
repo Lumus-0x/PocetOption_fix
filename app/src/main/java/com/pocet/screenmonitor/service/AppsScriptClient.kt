@@ -1,5 +1,6 @@
 package com.pocet.screenmonitor.service
 
+import android.content.Context
 import com.google.gson.Gson
 import com.pocet.screenmonitor.model.BalanceResult
 import com.pocet.screenmonitor.util.DateUtils
@@ -21,8 +22,8 @@ import java.util.concurrent.TimeUnit
  * ```javascript
  * function doPost(e) {
  *   const data = JSON.parse(e.postData.contents);
- *   // data: { date: "MM/dd/yyyy", amount: "1234.56", accountType: "REAL" }
- *   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Лист1');
+ *   // data: { date: "dd.MM.yyyy", amount: 1234.56, accountType: "REAL" }
+ *   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Plan_30_days');
  *   const dates = sheet.getRange('B:B').getValues().flat();
  *   const row = dates.findIndex(d => d === data.date) + 1;
  *   if (row > 0) sheet.getRange(`E${row}`).setValue(data.amount);
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit
  * ```
  */
 class AppsScriptClient private constructor(
-    private val webAppUrl: String,
+    private val context: Context,
     private val okHttpClient: OkHttpClient,
     private val gson: Gson,
     private val dateUtils: DateUtils
@@ -40,24 +41,37 @@ class AppsScriptClient private constructor(
     companion object {
         private const val TIMEOUT_SECONDS = 30L
         private const val CONTENT_TYPE = "application/json; charset=utf-8"
+        private const val PREFS_NAME = "apps_script_prefs"
+        private const val KEY_WEB_APP_URL = "web_app_url"
 
-        fun create(webAppUrl: String, dateUtils: DateUtils): AppsScriptClient {
+        fun create(context: Context, dateUtils: DateUtils): AppsScriptClient {
             val client = OkHttpClient.Builder()
                 .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .build()
-            return AppsScriptClient(webAppUrl, client, Gson(), dateUtils)
+            return AppsScriptClient(context, client, Gson(), dateUtils)
+        }
+
+        private fun getWebAppUrl(context: Context): String {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            return prefs.getString(KEY_WEB_APP_URL, "") ?: ""
         }
     }
 
     /**
      * Sends balance data to the Apps Script Web App.
+     * Reads URL from SharedPreferences each time to get the latest value.
      *
      * @param result BalanceResult with amount, accountType, and current date
      * @return Result with success status and optional error message
      */
     suspend fun sendBalance(result: BalanceResult): AppsScriptResult {
+        val webAppUrl = getWebAppUrl(context)
+        if (webAppUrl.isEmpty()) {
+            return AppsScriptResult.Error("Web App URL не задан. Укажите URL в настройках приложения.")
+        }
+
         val date = dateUtils.getCurrentDateForSheets()
 
         val payload = mapOf(
