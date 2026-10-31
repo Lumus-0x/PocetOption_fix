@@ -114,16 +114,32 @@ class ScreenCaptureService : Service() {
                     // Then create MediaProjection
                     startForegroundServiceWithType()
 
-                    val mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                    Timber.d("Getting MediaProjection from manager")
-                    val projection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
-                    if (projection != null) {
-                        Timber.d("MediaProjection created successfully")
-                        startCapture(projection)
-                    } else {
-                        Timber.e("Failed to create MediaProjection - returned null")
-                        sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
-                        stopSelf()
+                    // Small delay to ensure foreground service is fully active (fixes Android 14+ race condition)
+                    mainScope.launch {
+                        try {
+                            delay(500) // Wait for foreground service to be fully registered
+                        } catch (e: Exception) {
+                            Timber.d("Delay interrupted")
+                            return@launch
+                        }
+
+                        try {
+                            val mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                            Timber.d("Getting MediaProjection from manager")
+                            val projection = mediaProjectionManager.getMediaProjection(resultCode, resultData)
+                            if (projection != null) {
+                                Timber.d("MediaProjection created successfully")
+                                startCapture(projection)
+                            } else {
+                                Timber.e("Failed to create MediaProjection - returned null")
+                                sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
+                                stopSelf()
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Error creating MediaProjection")
+                            sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
+                            stopSelf()
+                        }
                     }
                 } else {
                     Timber.e("Invalid MediaProjection data: resultCode=$resultCode, resultData=${resultData != null}")
@@ -204,10 +220,10 @@ class ScreenCaptureService : Service() {
 
         try {
             setupImageReader()
-            createVirtualDisplay()
+            val vdCreated = createVirtualDisplay()
 
-            if (virtualDisplay == null) {
-                Timber.e("VirtualDisplay is null after creation!")
+            if (!vdCreated || virtualDisplay == null) {
+                Timber.e("VirtualDisplay creation failed!")
                 sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
                 stopCapture()
                 stopSelf()
@@ -262,34 +278,66 @@ class ScreenCaptureService : Service() {
         }
     }
 
-    private fun createVirtualDisplay() {
-        val projection = mediaProjection ?: return
+    private fun createVirtualDisplay(): Boolean {
+        val projection = mediaProjection ?: return false
         val width = displayMetrics?.widthPixels ?: 1080
         val height = displayMetrics?.heightPixels ?: 1920
         val density = displayMetrics?.densityDpi ?: 320
+        val surface = imageReader?.surface
 
-        Timber.d("Creating VirtualDisplay: ${width}x${height}, density=$density, surface=${imageReader?.surface != null}")
+        Timber.d("Creating VirtualDisplay: ${width}x${height}, density=$density, surface=${surface != null}, projectionValid=${projection != null}")
+
+        // Validate surface
+        if (surface == null) {
+            Timber.e("ImageReader surface is null - cannot create VirtualDisplay")
+            return false
+        }
+
+        // Validate projection
+        if (projection == null) {
+            Timber.e("MediaProjection is null - cannot create VirtualDisplay")
+            return false
+        }
 
         try {
             val vd = projection.createVirtualDisplay(
                 "ScreenCaptureDisplay",
                 width, height, density,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                imageReader?.surface,
-                null, // Callback
-                null  // Handler
+                surface,
+                object : VirtualDisplay.Callback() {
+                    override fun onPaused() {
+                        Timber.w("VirtualDisplay paused")
+                    }
+
+                    override fun onResumed() {
+                        Timber.d("VirtualDisplay resumed")
+                    }
+
+                    override fun onStopped() {
+                        Timber.w("VirtualDisplay stopped")
+                        mainScope.launch {
+                            stopCapture()
+                            sendBroadcast(Intent(ACTION_CAPTURE_STOPPED))
+                            stopSelf()
+                        }
+                    }
+                },
+                Handler(Looper.getMainLooper())
             )
 
             virtualDisplay = vd
 
             if (vd == null) {
                 Timber.e("Failed to create virtual display - returned null")
+                return false
             } else {
                 Timber.d("VirtualDisplay created successfully: ${vd.display}")
+                return true
             }
         } catch (e: Exception) {
-            Timber.e(e, "Exception creating virtual display")
-            throw e
+            Timber.e(e, "Exception creating virtual display: ${e.message}, cause: ${e.cause?.message}")
+            return false
         }
     }
 
