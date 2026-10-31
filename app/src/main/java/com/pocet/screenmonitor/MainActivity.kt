@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadWebAppUrl() {
         val prefs = getSharedPreferences("apps_script_prefs", Context.MODE_PRIVATE)
-        val url = prefs.getString("web_app_url", "")
+        val url = prefs.getString("web_app_url", "") ?: ""
         if (url.isNotEmpty()) {
             btnSetWebAppUrl.text = getString(R.string.btn_web_app_url_set)
             btnTestConnection.isEnabled = true
@@ -343,8 +343,9 @@ class MainActivity : AppCompatActivity() {
                 // Send test payload
                 val testResult = com.pocet.screenmonitor.model.BalanceResult(
                     accountType = com.pocet.screenmonitor.model.BalanceResult.AccountType.REAL,
-                    amount = "0.00",
-                    confidence = 1.0
+                    amount = 0.0,
+                    confidence = 1.0f,
+                    rawText = "test"
                 )
                 val result = client.sendBalance(testResult)
 

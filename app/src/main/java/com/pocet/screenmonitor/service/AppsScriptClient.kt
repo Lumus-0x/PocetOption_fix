@@ -2,6 +2,7 @@ package com.pocet.screenmonitor.service
 
 import com.google.gson.Gson
 import com.pocet.screenmonitor.model.BalanceResult
+import com.pocet.screenmonitor.util.DateUtils
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -32,20 +33,21 @@ import java.util.concurrent.TimeUnit
 class AppsScriptClient private constructor(
     private val webAppUrl: String,
     private val okHttpClient: OkHttpClient,
-    private val gson: Gson
+    private val gson: Gson,
+    private val dateUtils: DateUtils
 ) {
 
     companion object {
         private const val TIMEOUT_SECONDS = 30L
         private const val CONTENT_TYPE = "application/json; charset=utf-8"
 
-        fun create(webAppUrl: String): AppsScriptClient {
+        fun create(webAppUrl: String, dateUtils: DateUtils): AppsScriptClient {
             val client = OkHttpClient.Builder()
                 .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .build()
-            return AppsScriptClient(webAppUrl, client, Gson())
+            return AppsScriptClient(webAppUrl, client, Gson(), dateUtils)
         }
     }
 
@@ -56,7 +58,7 @@ class AppsScriptClient private constructor(
      * @return Result with success status and optional error message
      */
     suspend fun sendBalance(result: BalanceResult): AppsScriptResult {
-        val date = com.pocet.screenmonitor.util.DateUtils.formatSheetDate(System.currentTimeMillis())
+        val date = dateUtils.getCurrentDateForSheets()
 
         val payload = mapOf(
             "date" to date,
@@ -78,8 +80,8 @@ class AppsScriptClient private constructor(
                     Timber.d("Apps Script response: $responseBody")
                     AppsScriptResult.Success(responseBody)
                 } else {
-                    Timber.e("Apps Script error: ${response.code()} - $responseBody")
-                    AppsScriptResult.Error("HTTP ${response.code()}: $responseBody")
+                    Timber.e("Apps Script error: ${response.code} - $responseBody")
+                    AppsScriptResult.Error("HTTP ${response.code}: $responseBody")
                 }
             }
         } catch (e: Exception) {
