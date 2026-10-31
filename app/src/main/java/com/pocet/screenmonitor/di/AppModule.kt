@@ -1,13 +1,10 @@
 package com.pocet.screenmonitor.di
 
 import android.content.Context
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.api.services.sheets.v4.SheetsScopes
+import android.content.SharedPreferences
+import com.pocet.screenmonitor.service.AppsScriptClient
 import com.pocet.screenmonitor.service.CaptureScheduler
 import com.pocet.screenmonitor.service.OcrProcessor
-import com.pocet.screenmonitor.service.SheetsAuthManager
-import com.pocet.screenmonitor.service.SheetsRepository
 import com.pocet.screenmonitor.service.TextParser
 import com.pocet.screenmonitor.util.BatteryOptimizationUtils
 import com.pocet.screenmonitor.util.DateUtils
@@ -21,15 +18,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
-    @Provides
-    @Singleton
-    fun provideGoogleSignInOptions(): GoogleSignInOptions {
-        return GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestScopes(com.google.android.gms.common.api.Scope(SheetsScopes.SPREADSHEETS))
-            .requestEmail()
-            .build()
-    }
 
     @Provides
     @Singleton
@@ -63,10 +51,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSheetsRepository(
-        authManager: SheetsAuthManager,
-        dateUtils: DateUtils
-    ): SheetsRepository {
-        return SheetsRepository(authManager, dateUtils)
+    fun provideAppsScriptClient(@ApplicationContext context: Context): AppsScriptClient {
+        val prefs = context.getSharedPreferences("apps_script_prefs", Context.MODE_PRIVATE)
+        val webAppUrl = prefs.getString("web_app_url", "") ?: ""
+        return AppsScriptClient.create(webAppUrl)
     }
 }

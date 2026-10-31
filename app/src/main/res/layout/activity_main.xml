@@ -82,7 +82,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Google Sign In Section Card -->
+            <!-- Apps Script Section Card -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.ScreenMonitor.CardView"
                 android:layout_width="match_parent"
@@ -100,17 +100,17 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/section_google_sheets"
+                        android:text="@string/section_apps_script"
                         android:textAppearance="@style/TextAppearance.ScreenMonitor.TitleMedium"
                         android:textColor="?attr/colorPrimary" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSignIn"
+                        android:id="@+id/btnSetWebAppUrl"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="@string/btn_sign_in"
-                        app:icon="@drawable/ic_google"
+                        android:text="@string/btn_set_web_app_url"
+                        app:icon="@drawable/ic_link"
                         app:iconGravity="start"
                         app:iconPadding="8dp"
                         style="@style/Widget.ScreenMonitor.Button.Filled" />

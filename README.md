@@ -1,17 +1,17 @@
 # Pocket Option Helper
 
-Android 16 app that runs in background, monitors screen for Pocket Option trading account balances ("qt real usd" or "qt demo usd"), and automatically writes the balance to Google Sheets at the row matching today's date.
+Android-приложение (API 26+), работающее в фоне, мониторящее экран на предмет баланса торгового аккаунта Pocket Option ("qt real usd" или "qt demo usd") и отправляющее его в Google Таблицы через **Google Apps Script Web App**.
 
-## Features
+## Особенности
 
-- **Background Screen Capture**: Uses MediaProjection API with foreground service for continuous monitoring
-- **On-Device OCR**: ML Kit Text Recognition processes screen content locally (no cloud)
-- **Smart Balance Detection**: Parses "qt real usd" / "qt demo usd" and extracts nearby currency amounts
-- **Google Sheets Integration**: Writes to column E at row matching today's date in column B (rows 6-35)
-- **Battery Optimized**: Handles Doze mode, requests battery optimization exemption, uses WorkManager
-- **Android 16 Compatible**: Foreground service types, exact alarm permissions, notification permissions
+- **Фоновый захват экрана**: MediaProjection API + Foreground Service для непрерывного мониторинга
+- **OCR на устройстве**: ML Kit Text Recognition обрабатывает контент экрана локально (без облака)
+- **Умное определение баланса**: Ищет "qt real usd" / "qt demo usd" и извлекает ближайшие суммы
+- **Интеграция через Apps Script**: Простой HTTP POST на Web App URL — **нет OAuth / Google Sign-In**
+- **Оптимизация батареи**: Учёт Doze mode, запрос исключения из оптимизации, WorkManager для планирования
+- **Android 14+ совместимость**: Foreground service types, точные будильники, разрешения уведомлений
 
-## Architecture
+## Архитектура
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
@@ -20,8 +20,8 @@ Android 16 app that runs in background, monitors screen for Pocket Option tradin
                                                           │
                                                           ▼
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Google Sheets  │◀────│  SheetsRepository │◀────│   TextParser    │
-│      API        │     │   (Retry Logic)  │     │  (Regex Match)  │
+│  Apps Script    │◀────│  AppsScriptClient │◀────│   TextParser    │
+│  Web App (POST) │     │   (OkHttp)       │     │  (Regex Match)  │
 └─────────────────┘     └──────────────────┘     └────────┬────────┘
                                                           │
                                                           ▼
@@ -31,7 +31,7 @@ Android 16 app that runs in background, monitors screen for Pocket Option tradin
 └─────────────────┘     └──────────────────┘     └─────────────────┘
 ```
 
-## Project Structure
+## Структура проекта
 
 ```
 app_pocet/
@@ -42,18 +42,15 @@ app_pocet/
 │   │   │   ├── MainActivity.kt              # Main UI & permission handling
 │   │   │   ├── di/
 │   │   │   │   ├── AppModule.kt             # Hilt DI module
-│   │   │   │   ├── AuthModule.kt            # Auth DI bindings
-│   │   │   │   └── ServiceEntryPoint.kt     # EntryPoint for Services
+│   │   │   │   └── ServiceEntryPoint.kt     # EntryPoint для Services
 │   │   │   ├── model/
-│   │   │   │   └── BalanceResult.kt         # Data model for parsed balance
+│   │   │   │   └── BalanceResult.kt         # Модель распознанного баланса
 │   │   │   ├── service/
 │   │   │   │   ├── ScreenCaptureService.kt  # Foreground service (core)
 │   │   │   │   ├── OcrProcessor.kt          # ML Kit OCR pipeline
-│   │   │   │   ├── TextParser.kt            # Balance extraction logic
-│   │   │   │   ├── SheetsRepository.kt      # Google Sheets API client
-│   │   │   │   ├── SheetsAuthManager.kt     # OAuth 2.0 authentication
-│   │   │   │   ├── SheetsAuthManagerImpl.kt # Google Sign-In implementation
-│   │   │   │   └── CaptureScheduler.kt      # WorkManager scheduling
+│   │   │   │   ├── TextParser.kt            # Логика извлечения баланса
+│   │   │   │   ├── AppsScriptClient.kt      # HTTP клиент для Apps Script
+│   │   │   │   └── CaptureScheduler.kt      # WorkManager планирование
 │   │   │   ├── receiver/
 │   │   │   │   └── BootReceiver.kt          # Boot completed receiver
 │   │   │   └── util/
@@ -79,65 +76,97 @@ app_pocet/
 └── README.md
 ```
 
-## Requirements
+## Требования
 
-- Android 8.0+ (API 26) - Min SDK
-- Android 16 (API 35) - Target SDK
-- Google Play Services (for ML Kit & Sign-In)
-- Internet permission for Google Sheets API
+- Android 8.0+ (API 26) — Min SDK
+- Android 14+ (API 34) — Target SDK (поддержка foreground service type)
+- Google Play Services (для ML Kit)
+- Интернет для отправки данных в Apps Script
 
-## Setup Instructions
+## Настройка (5 минут)
 
-### 1. Google Cloud Console Setup
+### 1. Создание Apps Script в Google Таблице
 
-1. Create a project in [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable **Google Sheets API**
-3. Configure **OAuth Consent Screen** (External user type)
-4. Create **OAuth 2.0 Client ID** for Android:
-   - Package name: `com.pocet.screenmonitor`
-   - SHA-1 certificate fingerprint (debug & release)
+1. Откройте вашу Google Таблицу
+2. **Расширения → Apps Script**
+3. Удалите весь код и вставьте:
 
-### 2. Google Sheet Setup
-
-1. Open the target sheet: `https://docs.google.com/spreadsheets/d/11I8BjFYYFDfXqTmu1u11lhJH-VIVdVS2tT8b5JqJmWQ/edit`
-2. Ensure column B (rows 6-35) contains dates in MM/dd/yyyy format
-3. Column E will receive the balance amounts
-4. Share the sheet with the OAuth client email if using service account
-
-### 3. Build & Install
-
-```bash
-# Build debug APK (use GitHub Actions on ARM64)
-gh workflow run build.yml
-
-# Install on device
-adb install app/build/outputs/apk/debug/app-debug.apk
+```javascript
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    // data: { date: "MM/dd/yyyy", amount: "1234.56", accountType: "REAL" }
+    
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Лист1');
+    const dates = sheet.getRange('B:B').getValues().flat();
+    const row = dates.findIndex(d => d === data.date) + 1;
+    
+    if (row > 0) {
+      sheet.getRange(`E${row}`).setValue(data.amount);
+      return ContentService.createTextOutput('OK');
+    } else {
+      return ContentService.createTextOutput('Date not found: ' + data.date);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput('Error: ' + err.message);
+  }
+}
 ```
 
-### 4. Runtime Setup
+4. **Сохранить** (Ctrl+S) → проект назовите "Pocket Option Helper"
+5. **Развернуть → Новое развёртывание → Тип: Веб-приложение**
+   - **Выполнять от моего имени**
+   - **У кого есть доступ: Все** (или "Все, у кого есть ссылка")
+6. **Развернуть** → скопируйте **URL веб-приложения** (формат: `https://script.google.com/macros/s/.../exec`)
 
-1. Open app → **Sign In to Google** (grants Sheets access)
-2. **Request All Permissions**:
-   - Battery optimization exemption (critical for background)
-   - Exact alarms (Android 14+)
-   - Notifications (Android 13+)
-3. **Start Capture** → Grant screen recording permission
-4. App runs in background, checks screen every 10 seconds
+### 2. Настройка таблицы
 
-## Google Sheet Format
+- Колонка **B (строки 6–35)**: даты в формате `MM/dd/yyyy` (например: `01/15/2024`)
+- Колонка **E**: сюда будет записываться баланс
+- Поддерживаемые форматы дат: `MM/dd/yyyy`, `yyyy-MM-dd`, `dd/MM/yyyy`, `MM-dd-yyyy`
 
-| Row | Column B (Date) | Column E (Amount) |
-|-----|----------------|-------------------|
-| 6   | 01/15/2024     | *auto-filled*     |
-| 7   | 01/16/2024     | *auto-filled*     |
-| ... | ...            | ...               |
-| 35  | 02/13/2024     | *auto-filled*     |
+### 3. Ввод URL в приложении
 
-Date formats supported: `MM/dd/yyyy`, `yyyy-MM-dd`, `dd/MM/yyyy`, `MM-dd-yyyy`
+1. Откройте приложение
+2. Нажмите **"URL Apps Script не задан"**
+3. Вставьте скопированный URL → **Сохранить**
+3. Нажмите **"Проверить соединение"** — должно появиться "Соединение успешно!"
 
-## Key Implementation Details
+### 4. Сборка и установка (только GitHub Actions)
 
-### Foreground Service (Android 16)
+```bash
+# Запуск сборки на GitHub Actions (ARM64 не поддерживает локальную сборку)
+gh workflow run build.yml
+
+# Скачивание APK после успешной сборки
+gh run download <run-id> -n app-debug
+
+# Установка на устройство
+adb install app-debug.apk
+```
+
+### 5. Запуск на устройстве
+
+1. **Откройте приложение** → проверьте, что URL задан
+2. **Нажмите "Запросить все разрешения"**:
+   - Исключение из оптимизации батареи (критично для фона)
+   - Точные будильники (Android 14+)
+   - Уведомления (Android 13+)
+3. **Нажмите "Начать захват"** → разрешите запись экрана в системном диалоге
+4. Приложение работает в фоне, проверяет экран каждые 10 секунд
+
+## Формат Google Таблицы
+
+| Строка | Колонка B (Дата) | Колонка E (Сумма) |
+|------|------------------|-------------------|
+| 6    | 01/15/2024       | *авто*            |
+| 7    | 01/16/2024       | *авто*            |
+| ...  | ...              | ...               |
+| 35   | 02/13/2024       | *авто*            |
+
+## Ключевые детали реализации
+
+### Foreground Service (Android 14+)
 ```xml
 <service
     android:name=".service.ScreenCaptureService"
@@ -146,59 +175,66 @@ Date formats supported: `MM/dd/yyyy`, `yyyy-MM-dd`, `dd/MM/yyyy`, `MM-dd-yyyy`
     android:stopWithTask="false" />
 ```
 
-### MediaProjection Lifecycle
-- User grants permission via system dialog
-- Service creates `VirtualDisplay` → `ImageReader`
-- Captures frames at 10-second intervals
-- Processes with ML Kit on background thread
+### Жизненный цикл MediaProjection
+1. Пользователь даёт разрешение через системный диалог
+2. Сервис создаёт `VirtualDisplay` → `ImageReader`
+3. Захватывает кадры каждые 10 секунд
+4. Обрабатывает через ML Kit в фоновом потоке
 
-### OCR Processing
-- Converts YUV_420_888 Image → Bitmap
-- Downsamples to max 1920px for performance
-- Runs ML Kit Text Recognition
-- Parses text blocks for keywords + amounts
+### OCR обработка
+- Конвертирует YUV_420_888 Image → Bitmap
+- Даунсемплинг до макс. 1920px для производительности
+- Запускает ML Kit Text Recognition
+- Парсит текстовые блоки на ключевые слова + суммы
 
-### Text Parsing Patterns
+### Паттерны парсинга
 ```kotlin
-// Keywords
+// Ключевые слова
 "qt real usd", "qt demo usd", "real usd", "demo usd"
 
-// Amount formats
+// Форматы сумм
 $1,234.56 | 1,234.56 | 1234.56 | 1.234,56 (EU)
 ```
 
-### Google Sheets Write Logic
-1. Read `B6:B35` range for dates
-2. Find row where normalized date == today
-3. Update `E{row}` with `USER_ENTERED` value input option
-4. Exponential backoff retry (max 3 attempts)
+### Логика отправки в Apps Script
+1. Формирует JSON: `{ "date": "MM/dd/yyyy", "amount": "1234.56", "accountType": "REAL" }`
+2. POST на Web App URL с таймаутом 30 сек
+3. Минимум 1 минута между отправками (защита от спама)
+4. Логирует успех/ошибку в уведомление
 
-### Battery Optimization
-- Requests `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
-- Uses WorkManager with network/battery constraints
-- Minimum 1-minute interval between sheet writes
-- Pauses during Doze mode
+### Оптимизация батареи
+- Запрашивает `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`
+- WorkManager с ограничениями: сеть + батарея не низкая
+- Пауза в Doze mode
+- Минимум 1 минута между записями
 
-## Troubleshooting
+## Устранение неполадок
 
-| Issue | Solution |
-|-------|----------|
-| Service killed in background | Disable battery optimization, grant exact alarm permission |
-| OCR not detecting text | Ensure screen brightness, check "qt real usd" is visible |
-| Sheets write fails | Verify sign-in, check sheet sharing, check date format in column B |
-| MediaProjection denied | User must grant in system dialog, cannot be auto-granted |
+| Проблема | Решение |
+|----------|---------|
+| Сервис убивается в фоне | Отключите оптимизацию батареи, дайте разрешение точных будильников |
+| OCR не находит текст | Проверьте яркость экрана, убедитесь что "qt real usd" видно |
+| Ошибка отправки | Проверьте URL Apps Script, права доступа таблицы, формат даты в колонке B |
+| MediaProjection отклонён | Пользователь должен разрешить в системном диалоге |
 
-## Permissions Summary
+## Разрешения
 
-| Permission | Purpose | Runtime Request |
-|------------|---------|-----------------|
-| `FOREGROUND_SERVICE_MEDIA_PROJECTION` | Background screen capture | Manifest only |
-| `MEDIA_PROJECTION` | Screen capture intent | System dialog |
-| `INTERNET` | Google Sheets API | Manifest only |
-| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Prevent Doze kills | Settings intent |
-| `SCHEDULE_EXACT_ALARM` (Android 14+) | Precise scheduling | Settings intent |
-| `POST_NOTIFICATIONS` (Android 13+) | Foreground notification | Runtime dialog |
+| Разрешение | Назначение | Запрос |
+|------------|------------|--------|
+| `FOREGROUND_SERVICE_MEDIA_PROJECTION` | Фоновый захват экрана | Только манифест |
+| `MEDIA_PROJECTION` | Интент захвата экрана | Системный диалог |
+| `INTERNET` | HTTP POST в Apps Script | Только манифест |
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Защита от Doze | Settings intent |
+| `SCHEDULE_EXACT_ALARM` (Android 14+) | Точное планирование | Settings intent |
+| `POST_NOTIFICATIONS` (Android 13+) | Уведомление сервиса | Runtime диалог |
 
-## License
+## Полезные ссылки
 
-MIT License - Feel free to modify for your trading setup.
+- [Apps Script Web App руководство](https://developers.google.com/apps-script/guides/web)
+- [ML Kit Text Recognition](https://developers.google.com/ml-kit/vision/text-recognition)
+- [MediaProjection API](https://developer.android.com/media/media-projection)
+- [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager)
+
+## Лицензия
+
+MIT License — модифицируйте под свои торговые нужды.

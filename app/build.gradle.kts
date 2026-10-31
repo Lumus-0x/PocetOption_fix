@@ -70,13 +70,7 @@ dependencies {
     // ML Kit Text Recognition (on-device)
     implementation("com.google.mlkit:text-recognition:16.0.0")
 
-    // Google Auth & Sheets API
-    implementation("com.google.android.gms:play-services-auth:21.0.0")
-    implementation("com.google.api-client:google-api-client:1.32.1")
-    implementation("com.google.api-client:google-api-client-android:1.32.1")
-    implementation("com.google.http-client:google-http-client-android:1.32.1")
-    implementation("com.google.oauth-client:google-oauth-client:1.32.1")
-    implementation("com.google.apis:google-api-services-sheets:v4-rev20261019-2.0.0")
+    // HTTP Client for Apps Script
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.code.gson:gson:2.11.0")
 
@@ -88,7 +82,7 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
-    // EncryptedSharedPreferences for secure token storage
+    // EncryptedSharedPreferences for secure storage
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     // Timber for logging

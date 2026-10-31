@@ -6,36 +6,34 @@
     <string name="status_checking">Проверка разрешений…</string>
     <string name="status_running">Работает — захват экрана</string>
     <string name="status_stopped">Остановлено</string>
-    <string name="status_need_signin">Необходимо войти в Google</string>
     <string name="status_need_permissions">Требуются разрешения</string>
-    <string name="status_signed_in">✅ Выполнен вход: %s</string>
-    <string name="status_sign_in_failed">❌ Вход не выполнен</string>
-    <string name="status_signed_out">❌ Не выполнен вход в Google</string>
-    <string name="status_testing_connection">🔄 Проверка соединения с Google Таблицами…</string>
-    <string name="status_connection_success">✅ Соединение с Google Таблицами успешно</string>
+    <string name="status_need_web_app_url">Требуется URL Apps Script</string>
+    <string name="status_testing_connection">🔄 Проверка соединения с Apps Script…</string>
+    <string name="status_connection_success">✅ Соединение с Apps Script успешно</string>
 
     <!-- Button texts -->
     <string name="btn_start_capture">Начать захват</string>
     <string name="btn_stop_capture">Остановить захват</string>
-    <string name="btn_sign_in">Войти в Google</string>
-    <string name="btn_signed_in">Вход выполнен ✓</string>
     <string name="btn_test_connection">Проверить соединение</string>
     <string name="btn_request_permissions">Запросить все разрешения</string>
+    <string name="btn_set_web_app_url">URL Apps Script не задан</string>
+    <string name="btn_web_app_url_set">URL Apps Script задан ✓</string>
+    <string name="btn_web_app_url_not_set">URL Apps Script не задан</string>
 
     <!-- Descriptions -->
-    <string name="desc_how_it_works">1. Войдите в Google для доступа к Таблицам\n2. Разрешите захват экрана\n3. Отключите оптимизацию батареи для приложения\n4. Начните захват — приложение работает в фоне\n5. При обнаружении "qt real usd" или "qt demo usd" баланс записывается в столбец E в строку с сегодняшней датой (B6:B35)</string>
+    <string name="desc_how_it_works">1. Создайте Apps Script в Google Таблице (Расширения → Apps Script)\n2. Вставьте код doPost(e) для записи баланса\n3. Разверните как Веб-приложение: Выполнять от моего имени, Доступ: Все\n4. Скопируйте URL и вставьте в приложение\n5. Разрешите захват экрана и начните мониторинг</string>
 
     <string name="desc_permissions">Необходимо: исключение из оптимизации батареи, точные будильники (Android 14+), уведомления (Android 13+)</string>
-    <string name="desc_screen_capture">Отслеживает "qt real usd" или "qt demo usd" на экране и записывает баланс в Google Таблицы</string>
+    <string name="desc_screen_capture">Отслеживает "qt real usd" или "qt demo usd" на экране и отправляет баланс в Apps Script</string>
 
     <!-- Section titles -->
     <string name="section_title">Pocket Option Helper</string>
     <string name="section_status">Статус</string>
-    <string name="section_google_sheets">Доступ к Google Таблицам</string>
+    <string name="section_apps_script">Настройка Apps Script</string>
     <string name="section_account_type">Тип аккаунта для мониторинга</string>
     <string name="section_account_type_desc">Выберите, какой тип аккаунта искать на экране</string>
     <string name="section_screen_capture">Захват экрана</string>
-    <string name="section_screen_capture_desc">Отслеживает выбранный тип аккаунта на экране и записывает баланс в Google Таблицы</string>
+    <string name="section_screen_capture_desc">Отслеживает выбранный тип аккаунта на экране и отправляет баланс в Apps Script</string>
     <string name="section_permissions">Разрешения и настройки</string>
     <string name="section_how_it_works">Как это работает</string>
 
@@ -44,9 +42,6 @@
     <string name="rb_demo">QT Demo USD</string>
 
     <!-- Toasts -->
-    <string name="toast_signed_in_success">Вход выполнен успешно</string>
-    <string name="toast_sign_in_failed">Ошибка входа</string>
-    <string name="toast_sign_in_intent_failed">Не удалось создать запрос входа</string>
     <string name="toast_capture_started">Захват экрана запущен</string>
     <string name="toast_capture_permission_required">Требуется разрешение на захват экрана</string>
     <string name="toast_capture_stopped">Захват экрана остановлен</string>
@@ -56,7 +51,9 @@
     <string name="toast_account_type_changed_restart">⚠️ Тип аккаунта изменен. Перезапустите захват.</string>
     <string name="toast_connection_success">Соединение успешно!</string>
     <string name="toast_connection_failed">Ошибка соединения: %s</string>
-    <string name="toast_sign_in_first">Сначала выполните вход в Google</string>
+    <string name="toast_web_app_url_saved">URL Apps Script сохранен</string>
+    <string name="toast_web_app_url_required">Сначала укажите URL Apps Script</string>
+    <string name="toast_invalid_web_app_url">Неверный URL. Должен начинаться с https://script.google.com/</string>
 
     <!-- Notifications -->
     <string name="notification_channel_name">Pocket Option Helper</string>
@@ -64,11 +61,10 @@
     <string name="notification_title">Pocket Option Helper активен</string>
     <string name="notification_text">Мониторинг баланса в фоне…</string>
 
-    <!-- Menu items -->
-    <string name="action_settings">Настройки</string>
-    <string name="action_about">О приложении</string>
-    <string name="action_sign_out">Выйти из аккаунта</string>
-
-    <!-- FAB description -->
-    <string name="desc_quick_action">Быстрое действие</string>
+    <!-- Dialogs -->
+    <string name="dialog_web_app_url_title">URL веб-приложения Apps Script</string>
+    <string name="dialog_web_app_url_message">Вставьте URL, полученный при развёртывании Apps Script как веб-приложения (Deploy → Web App).\n\nФормат: https://script.google.com/macros/s/.../exec</string>
+    <string name="hint_web_app_url">https://script.google.com/macros/s/.../exec</string>
+    <string name="btn_save">Сохранить</string>
+    <string name="btn_cancel">Отмена</string>
 </resources>

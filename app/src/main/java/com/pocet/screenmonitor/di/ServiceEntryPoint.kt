@@ -1,6 +1,6 @@
 package com.pocet.screenmonitor.di
 
-import com.pocet.screenmonitor.service.SheetsRepository
+import com.pocet.screenmonitor.service.AppsScriptClient
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -13,5 +13,5 @@ import javax.inject.Provider
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 interface ServiceEntryPoint {
-    fun sheetsRepository(): Provider<SheetsRepository>
+    fun appsScriptClient(): Provider<AppsScriptClient>
 }

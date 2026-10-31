@@ -60,7 +60,7 @@ class ScreenCaptureService : Service() {
 
     private val ocrProcessor = OcrProcessor()
     private val textParser = TextParser()
-    private var sheetsRepository: SheetsRepository? = null
+    private var appsScriptClient: AppsScriptClient? = null
     private val captureJob = SupervisorJob()
     private val mainJob = SupervisorJob()
     private val captureScope = CoroutineScope(captureJob + Dispatchers.IO)
@@ -85,25 +85,25 @@ class ScreenCaptureService : Service() {
         Timber.d("Target account type: $targetAccountType")
 
         createNotificationChannel()
-        // SheetsRepository will be initialized lazily on first use
+        // AppsScriptClient will be initialized lazily on first use
     }
 
-    private fun initSheetsRepository() {
-        // Get SheetsRepository from Hilt EntryPoint
+    private fun initAppsScriptClient() {
+        // Get AppsScriptClient from Hilt EntryPoint
         try {
             val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ServiceEntryPoint::class.java)
-            sheetsRepository = entryPoint.sheetsRepository().get()
-            Timber.d("SheetsRepository initialized from Hilt EntryPoint")
+            appsScriptClient = entryPoint.appsScriptClient().get()
+            Timber.d("AppsScriptClient initialized from Hilt EntryPoint")
         } catch (e: Exception) {
-            Timber.e(e, "Failed to get SheetsRepository from Hilt EntryPoint")
+            Timber.e(e, "Failed to get AppsScriptClient from Hilt EntryPoint")
         }
     }
 
-    private fun getSheetsRepository(): SheetsRepository? {
-        if (sheetsRepository == null) {
-            initSheetsRepository()
+    private fun getAppsScriptClient(): AppsScriptClient? {
+        if (appsScriptClient == null) {
+            initAppsScriptClient()
         }
-        return sheetsRepository
+        return appsScriptClient
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -284,17 +284,17 @@ class ScreenCaptureService : Service() {
     }
 
     private fun writeToSheets(result: BalanceResult) {
-        val repo = getSheetsRepository() ?: return
+        val client = getAppsScriptClient() ?: return
 
         captureScope.launch {
-            val writeResult = repo.writeBalance(result)
+            val writeResult = client.sendBalance(result)
             if (writeResult.isSuccess) {
-                Timber.d("Successfully wrote to Google Sheets")
+                Timber.d("Successfully sent to Apps Script")
                 lastSuccessfulWrite = System.currentTimeMillis()
                 updateNotification("Balance synced: ${result.amount}")
             } else {
-                Timber.e(writeResult.exceptionOrNull(), "Failed to write to Google Sheets")
-                updateNotification("Sync failed: ${writeResult.exceptionOrNull()?.message}")
+                Timber.e("Failed to send to Apps Script: ${writeResult.errorMessage}")
+                updateNotification("Sync failed: ${writeResult.errorMessage}")
             }
         }
     }

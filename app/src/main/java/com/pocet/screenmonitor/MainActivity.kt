@@ -7,7 +7,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
+import android.view.View
 import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -18,12 +22,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.pocet.screenmonitor.service.CaptureScheduler
 import com.pocet.screenmonitor.service.ScreenCaptureService
-import com.pocet.screenmonitor.service.SheetsAuthManager
-import com.pocet.screenmonitor.service.SheetsRepository
 import com.pocet.screenmonitor.di.ServiceEntryPoint
 import com.pocet.screenmonitor.util.BatteryOptimizationUtils
 import com.pocet.screenmonitor.util.PermissionUtils
@@ -38,9 +38,6 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
 
     @Inject
-    lateinit var authManager: SheetsAuthManager
-
-    @Inject
     lateinit var captureScheduler: CaptureScheduler
 
     @Inject
@@ -51,9 +48,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvLastSync: TextView
     private lateinit var btnStartCapture: Button
     private lateinit var btnStopCapture: Button
-    private lateinit var btnSignIn: Button
     private lateinit var btnTestConnection: Button
     private lateinit var btnRequestPermissions: Button
+    private lateinit var btnSetWebAppUrl: Button
     private lateinit var rgAccountType: RadioGroup
     private lateinit var rbReal: RadioButton
     private lateinit var rbDemo: RadioButton
@@ -63,12 +60,6 @@ class MainActivity : AppCompatActivity() {
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
         handleMediaProjectionResult(result.resultCode, result.data)
-    }
-
-    private val signInLauncher = registerForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        handleSignInResult(result.resultCode, result.data)
     }
 
     private val batteryOptimizationLauncher = registerForActivityResult(
@@ -95,7 +86,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Wrap in try-catch to prevent crash on startup
         try {
             setContentView(R.layout.activity_main)
 
@@ -105,8 +95,6 @@ class MainActivity : AppCompatActivity() {
             checkPermissionsAndSetup()
         } catch (e: Exception) {
             Timber.e(e, "Fatal error in onCreate")
-            // Show error to user instead of crashing
-            // Check if tvStatus is initialized (may not be if exception happened in setContentView or early initViews)
             if (this::tvStatus.isInitialized) {
                 tvStatus.text = "Ошибка инициализации: ${e.message}"
             }
@@ -119,15 +107,18 @@ class MainActivity : AppCompatActivity() {
         tvLastSync = findViewById(R.id.tvLastSync)
         btnStartCapture = findViewById(R.id.btnStartCapture)
         btnStopCapture = findViewById(R.id.btnStopCapture)
-        btnSignIn = findViewById(R.id.btnSignIn)
         btnTestConnection = findViewById(R.id.btnTestConnection)
         btnRequestPermissions = findViewById(R.id.btnRequestPermissions)
+        btnSetWebAppUrl = findViewById(R.id.btnSetWebAppUrl)
         rgAccountType = findViewById(R.id.rgAccountType)
         rbReal = findViewById(R.id.rbReal)
         rbDemo = findViewById(R.id.rbDemo)
 
         // Load saved account type preference
         loadAccountTypePreference()
+
+        // Load saved Web App URL
+        loadWebAppUrl()
 
         // Set listener for account type changes
         rgAccountType.setOnCheckedChangeListener { _, checkedId ->
@@ -136,17 +127,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initManagers() {
-        // Auth manager is already initialized via Hilt with correct GoogleSignInOptions
-        // No need to re-initialize - just verify it's ready
-        Timber.d("Auth manager initialized via Hilt: ${authManager.isSignedIn()}")
+        Timber.d("Managers initialized via Hilt")
     }
 
     private fun setupClickListeners() {
         btnStartCapture.setOnClickListener { requestMediaProjection() }
         btnStopCapture.setOnClickListener { stopCaptureService() }
-        btnSignIn.setOnClickListener { signInToGoogle() }
-        btnTestConnection.setOnClickListener { testSheetsConnection() }
+        btnTestConnection.setOnClickListener { testAppsScriptConnection() }
         btnRequestPermissions.setOnClickListener { requestAllPermissions() }
+        btnSetWebAppUrl.setOnClickListener { showWebAppUrlDialog() }
     }
 
     private fun checkPermissionsAndSetup() {
@@ -159,9 +148,6 @@ class MainActivity : AppCompatActivity() {
 
             // Check notification permission
             checkNotificationPermission()
-
-            // Check if signed in
-            checkSignInStatus()
 
             // Update UI based on service state
             updateServiceStatusUI()
@@ -191,6 +177,69 @@ class MainActivity : AppCompatActivity() {
         if (captureScheduler.isServiceRunning()) {
             updateStatus(getString(R.string.toast_account_type_changed_restart))
         }
+    }
+
+    private fun loadWebAppUrl() {
+        val prefs = getSharedPreferences("apps_script_prefs", Context.MODE_PRIVATE)
+        val url = prefs.getString("web_app_url", "")
+        if (url.isNotEmpty()) {
+            btnSetWebAppUrl.text = getString(R.string.btn_web_app_url_set)
+            btnTestConnection.isEnabled = true
+        } else {
+            btnSetWebAppUrl.text = getString(R.string.btn_web_app_url_not_set)
+            btnTestConnection.isEnabled = false
+        }
+    }
+
+    private fun saveWebAppUrl(url: String) {
+        val prefs = getSharedPreferences("apps_script_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString("web_app_url", url).apply()
+        Timber.d("Saved Web App URL")
+
+        // Update Hilt's AppsScriptClient with new URL
+        updateAppsScriptClientUrl(url)
+
+        btnSetWebAppUrl.text = getString(R.string.btn_web_app_url_set)
+        btnTestConnection.isEnabled = true
+        Toast.makeText(this, getString(R.string.toast_web_app_url_saved), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun updateAppsScriptClientUrl(url: String) {
+        try {
+            val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ServiceEntryPoint::class.java)
+            val client = entryPoint.appsScriptClient().get()
+            // Note: AppsScriptClient is immutable, so we can't update it directly.
+            // The service will pick up the new URL on next start since it reads from SharedPreferences.
+            Timber.d("AppsScriptClient URL will be updated on next service start")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to update AppsScriptClient URL")
+        }
+    }
+
+    private fun showWebAppUrlDialog() {
+        val input = EditText(this).apply {
+            val prefs = getSharedPreferences("apps_script_prefs", Context.MODE_PRIVATE)
+            val currentUrl = prefs.getString("web_app_url", "") ?: ""
+            setText(currentUrl)
+            hint = getString(R.string.hint_web_app_url)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setMinWidth(400)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_web_app_url_title)
+            .setMessage(R.string.dialog_web_app_url_message)
+            .setView(input)
+            .setPositiveButton(R.string.btn_save) { _, _ ->
+                val url = input.text.toString().trim()
+                if (url.isNotEmpty() && (url.startsWith("https://script.google.com/") || url.startsWith("https://script.googleusercontent.com/"))) {
+                    saveWebAppUrl(url)
+                } else {
+                    Toast.makeText(this@MainActivity, getString(R.string.toast_invalid_web_app_url), Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton(R.string.btn_cancel, null)
+            .show()
     }
 
     private fun requestAllPermissions() {
@@ -234,29 +283,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkSignInStatus() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            // Use new getAccountOrNull to check if we have a valid account without throwing
-            val accountResult = authManager.getAccountOrNull()
-            runOnUiThread {
-                if (accountResult.isSuccess) {
-                    val account = accountResult.getOrNull()
-                    btnSignIn.text = getString(R.string.btn_signed_in)
-                    btnSignIn.isEnabled = false
-                    if (account != null) {
-                        updateStatus(getString(R.string.status_signed_in, account.email))
-                    } else {
-                        updateStatus(getString(R.string.status_signed_in, ""))
-                    }
-                } else {
-                    btnSignIn.text = getString(R.string.btn_sign_in)
-                    btnSignIn.isEnabled = true
-                    updateStatus(getString(R.string.status_signed_out))
-                }
-            }
-        }
-    }
-
     private fun requestMediaProjection() {
         val mediaProjectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
         val intent = mediaProjectionManager.createScreenCaptureIntent()
@@ -266,6 +292,16 @@ class MainActivity : AppCompatActivity() {
     private fun handleMediaProjectionResult(resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK && data != null) {
             Timber.d("MediaProjection granted")
+
+            // Check if Web App URL is set
+            val prefs = getSharedPreferences("apps_script_prefs", Context.MODE_PRIVATE)
+            val webAppUrl = prefs.getString("web_app_url", "") ?: ""
+            if (webAppUrl.isEmpty()) {
+                updateStatus(getString(R.string.status_need_web_app_url))
+                Toast.makeText(this, getString(R.string.toast_web_app_url_required), Toast.LENGTH_LONG).show()
+                showWebAppUrlDialog()
+                return
+            }
 
             // Start the foreground service with the projection data
             val serviceIntent = Intent(this, ScreenCaptureService::class.java).apply {
@@ -286,68 +322,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun signInToGoogle() {
-        val intent = authManager.getSignInIntent()
-        if (intent != null) {
-            signInLauncher.launch(intent)
-        } else {
-            Toast.makeText(this, getString(R.string.toast_sign_in_intent_failed), Toast.LENGTH_SHORT).show()
-        }
-    }
+    private fun testAppsScriptConnection() {
+        val prefs = getSharedPreferences("apps_script_prefs", Context.MODE_PRIVATE)
+        val webAppUrl = prefs.getString("web_app_url", "") ?: ""
 
-    private fun handleSignInResult(resultCode: Int, data: Intent?) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val result = authManager.handleSignInResult(resultCode, data)
-            runOnUiThread {
-                if (result.isSuccess) {
-                    val account = result.getOrNull()
-                    if (account != null) {
-                        btnSignIn.text = getString(R.string.btn_signed_in)
-                        btnSignIn.isEnabled = false
-                        updateStatus(getString(R.string.status_signed_in, account.email))
-                        Toast.makeText(this@MainActivity, getString(R.string.toast_signed_in_success), Toast.LENGTH_SHORT).show()
-                        // Auto-request permissions after successful sign-in
-                        requestAllPermissions()
-                    }
-                } else {
-                    val errorMsg = result.exceptionOrNull()?.message ?: getString(R.string.toast_sign_in_failed)
-                    updateStatus(getString(R.string.status_sign_in_failed))
-                    Toast.makeText(this@MainActivity, errorMsg, Toast.LENGTH_LONG).show()
-                }
-            }
+        if (webAppUrl.isEmpty()) {
+            Toast.makeText(this, getString(R.string.toast_web_app_url_required), Toast.LENGTH_SHORT).show()
+            showWebAppUrlDialog()
+            return
         }
-    }
 
-    private fun testSheetsConnection() {
         updateStatus(getString(R.string.status_testing_connection))
         btnTestConnection.isEnabled = false
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val repo = getSheetsRepository()
-            if (repo != null) {
-                val result = repo.testConnection()
+            try {
+                val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ServiceEntryPoint::class.java)
+                val client = entryPoint.appsScriptClient().get()
+
+                // Send test payload
+                val testResult = com.pocet.screenmonitor.model.BalanceResult(
+                    accountType = com.pocet.screenmonitor.model.BalanceResult.AccountType.REAL,
+                    amount = "0.00",
+                    confidence = 1.0
+                )
+                val result = client.sendBalance(testResult)
+
                 runOnUiThread {
                     btnTestConnection.isEnabled = true
                     if (result.isSuccess) {
                         updateStatus(getString(R.string.status_connection_success))
                         Toast.makeText(this@MainActivity, getString(R.string.toast_connection_success), Toast.LENGTH_SHORT).show()
                     } else {
-                        val errorMsg = result.exceptionOrNull()?.message ?: "Unknown error"
-                        // Check if it's an auth error
-                        if (result.exceptionOrNull() is SheetsRepository.SheetsException.AuthException) {
-                            updateStatus(getString(R.string.status_need_signin))
-                            Toast.makeText(this@MainActivity, "Требуется повторный вход в Google", Toast.LENGTH_LONG).show()
-                        } else {
-                            updateStatus(getString(R.string.toast_connection_failed, errorMsg))
-                            Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, errorMsg), Toast.LENGTH_LONG).show()
-                        }
+                        val errorMsg = result.errorMessage ?: "Unknown error"
+                        updateStatus(getString(R.string.toast_connection_failed, errorMsg))
+                        Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, errorMsg), Toast.LENGTH_LONG).show()
                     }
                 }
-            } else {
+            } catch (e: Exception) {
                 runOnUiThread {
                     btnTestConnection.isEnabled = true
-                    updateStatus(getString(R.string.status_need_signin))
-                    Toast.makeText(this@MainActivity, getString(R.string.toast_sign_in_first), Toast.LENGTH_SHORT).show()
+                    updateStatus(getString(R.string.toast_connection_failed, e.message ?: "Error"))
+                    Toast.makeText(this@MainActivity, getString(R.string.toast_connection_failed, e.message ?: "Error"), Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -383,20 +399,10 @@ class MainActivity : AppCompatActivity() {
         Timber.d("Status: $message")
     }
 
-    private fun getSheetsRepository(): SheetsRepository? {
-        try {
-            val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ServiceEntryPoint::class.java)
-            return entryPoint.sheetsRepository().get()
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to get SheetsRepository from Hilt EntryPoint")
-            return null
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         updateServiceStatusUI()
-        checkSignInStatus()
+        loadWebAppUrl()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
